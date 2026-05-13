@@ -13,6 +13,10 @@
     --toggle-active-text: #ffffff;
     --border-color: #d1d5db;
     --input-bg: #ffffff;
+    --success-bg: #dcfce7;
+    --success-text: #166534;
+    --warning-bg: #fee2e2;
+    --warning-text: #991b1b;
 }
 
 body[data-theme="dark"] {
@@ -29,6 +33,10 @@ body[data-theme="dark"] {
     --toggle-active-text: #111827;
     --border-color: #4b5563;
     --input-bg: #111827;
+    --success-bg: #14532d;
+    --success-text: #dcfce7;
+    --warning-bg: #7f1d1d;
+    --warning-text: #fee2e2;
 }
 
 body {
@@ -76,27 +84,56 @@ body {
     color: var(--toggle-active-text);
 }
 
-.numbers {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin: 2rem 0;
+.mood-checker {
+    display: grid;
+    gap: 1rem;
 }
 
-.number {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background-color: var(--muted-bg);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.5rem;
+.eyebrow {
+    margin: 0;
+    color: var(--button-bg);
     font-weight: bold;
+}
+
+.mood-checker h1 {
+    margin: 0;
+    font-size: 1.8rem;
+}
+
+.mood-result {
+    background-color: var(--muted-bg);
+    border-radius: 8px;
+    padding: 1.25rem;
     transition: background-color 0.3s;
 }
 
-#generate {
+.mood-result.happy {
+    background-color: var(--success-bg);
+    color: var(--success-text);
+}
+
+.mood-result.unhappy {
+    background-color: var(--warning-bg);
+    color: var(--warning-text);
+}
+
+.mood-emoji {
+    font-size: 4rem;
+    line-height: 1;
+}
+
+#mood-title {
+    margin: 0.75rem 0 0.25rem;
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+
+#mood-confidence {
+    margin: 0;
+}
+
+#start-camera,
+.contact-form button {
     padding: 10px 20px;
     font-size: 1rem;
     border: none;
@@ -107,8 +144,62 @@ body {
     transition: background-color 0.3s;
 }
 
-#generate:hover {
+#start-camera:hover,
+.contact-form button:hover {
     background-color: var(--button-hover-bg);
+}
+
+#start-camera:disabled {
+    cursor: progress;
+    opacity: 0.75;
+}
+
+.webcam-container {
+    display: grid;
+    place-items: center;
+    min-height: 220px;
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.webcam-container canvas {
+    width: min(100%, 260px);
+    height: auto;
+    display: block;
+}
+
+.label-container {
+    display: grid;
+    gap: 8px;
+}
+
+.prediction-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: center;
+    text-align: left;
+}
+
+.prediction-name {
+    font-weight: bold;
+}
+
+.prediction-bar {
+    grid-column: 1 / -1;
+    height: 8px;
+    overflow: hidden;
+    border-radius: 999px;
+    background-color: var(--muted-bg);
+}
+
+.prediction-fill {
+    width: 0%;
+    height: 100%;
+    border-radius: inherit;
+    background-color: var(--button-bg);
+    transition: width 0.2s;
 }
 
 .contact-section {
@@ -152,16 +243,4 @@ body {
 
 .contact-form button {
     margin-top: 6px;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    background-color: var(--button-bg);
-    color: var(--button-text);
-    cursor: pointer;
-    font-size: 1rem;
-    transition: background-color 0.3s;
-}
-
-.contact-form button:hover {
-    background-color: var(--button-hover-bg);
 }

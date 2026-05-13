@@ -98,6 +98,28 @@ body {
     color: var(--toggle-active-text);
 }
 
+.site-nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.site-nav a,
+.site-footer a {
+    color: var(--button-bg);
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.site-nav a {
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background-color: var(--muted-bg);
+}
+
 .animal-checker {
     display: grid;
     gap: 1rem;
@@ -431,6 +453,99 @@ button:disabled {
     line-height: 1.45;
 }
 
+.content-section {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    text-align: left;
+}
+
+.content-section h1,
+.content-section h2,
+.content-section h3,
+.policy-page h1,
+.policy-page h2 {
+    margin-top: 0;
+}
+
+.content-section h2,
+.policy-page h1 {
+    text-align: center;
+    font-size: 1.35rem;
+}
+
+.content-section p,
+.policy-page p,
+.policy-page li {
+    line-height: 1.65;
+}
+
+.info-grid,
+.animal-guide-grid,
+.faq-list {
+    display: grid;
+    gap: 10px;
+    margin-top: 1rem;
+}
+
+.info-grid article,
+.animal-guide-grid article,
+.faq-list details,
+.policy-card {
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--muted-bg);
+}
+
+.info-grid h3 {
+    margin: 0 0 0.4rem;
+    font-size: 1rem;
+}
+
+.info-grid p,
+.animal-guide-grid span,
+.faq-list p {
+    margin: 0;
+}
+
+.animal-guide-grid article {
+    display: grid;
+    gap: 5px;
+}
+
+.animal-guide-grid span {
+    line-height: 1.45;
+}
+
+.faq-list summary {
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.faq-list p {
+    padding-top: 8px;
+}
+
+.policy-page {
+    display: grid;
+    gap: 1rem;
+    text-align: left;
+}
+
+.policy-page .intro-copy {
+    text-align: center;
+}
+
+.policy-card h2 {
+    font-size: 1.1rem;
+}
+
+.policy-card ul {
+    margin-bottom: 0;
+    padding-left: 1.25rem;
+}
+
 .contact-section {
     margin-top: 2rem;
     padding-top: 1.5rem;
@@ -471,6 +586,17 @@ button:disabled {
 
 .contact-form button {
     margin-top: 6px;
+}
+
+.site-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.9rem;
 }
 
 [hidden] {

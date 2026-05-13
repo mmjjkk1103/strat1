@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google-adsense-account" content="ca-pub-1003771485403609">
+    <meta name="description" content="사진 업로드 또는 카메라 촬영으로 얼굴 랜드마크를 분석해 12가지 동물상 점수와 특징 해설을 제공하는 재미용 AI 얼굴 분석 테스트입니다.">
     <title>동물상 AI 얼굴 분석</title>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1003771485403609"
         crossorigin="anonymous"></script>
@@ -15,6 +16,13 @@
             <button class="theme-toggle active" type="button" data-theme="light" aria-pressed="true">화이트모드</button>
             <button class="theme-toggle" type="button" data-theme="dark" aria-pressed="false">다크모드</button>
         </div>
+
+        <nav class="site-nav" aria-label="사이트 탐색">
+            <a href="index.html">테스트</a>
+            <a href="#animal-guide">동물상 기준</a>
+            <a href="about.html">서비스 소개</a>
+            <a href="privacy.html">개인정보처리방침</a>
+        </nav>
 
         <main class="animal-checker">
             <p class="eyebrow">AI 동물상 분석</p>
@@ -69,6 +77,68 @@
             </section>
         </main>
 
+        <section class="content-section" aria-labelledby="quality-title">
+            <p class="eyebrow">분석 가이드</p>
+            <h2 id="quality-title">어떤 기준으로 동물상을 분석하나요?</h2>
+            <p>
+                이 테스트는 사진 속 얼굴을 서버로 전송하지 않고 브라우저에서 얼굴 랜드마크를 감지한 뒤,
+                얼굴 비율, 눈매, 눈꼬리 방향, 입꼬리, 턱선, 중안부 비율 같은 특징을 수치화합니다.
+                각 특징은 12가지 동물상 프로필의 가중치와 비교되어 전체 점수 합계가 100%가 되도록 계산됩니다.
+            </p>
+            <div class="info-grid">
+                <article>
+                    <h3>얼굴형</h3>
+                    <p>둥근형, 긴형, 넓은형, 턱선의 선명도를 함께 보고 부드러운 인상인지 강한 골격감이 있는지 판단합니다.</p>
+                </article>
+                <article>
+                    <h3>눈매</h3>
+                    <p>눈의 크기와 가로 길이, 눈꼬리 방향, 눈 사이 간격을 분석해 둥근 눈망울인지 날렵한 눈매인지 계산합니다.</p>
+                </article>
+                <article>
+                    <h3>입매와 분위기</h3>
+                    <p>입 너비와 입꼬리 흐름을 반영해 밝은 미소형, 차분한 인상, 생동감 있는 인상 등을 구분합니다.</p>
+                </article>
+            </div>
+        </section>
+
+        <section id="animal-guide" class="content-section" aria-labelledby="animal-guide-title">
+            <p class="eyebrow">12가지 결과</p>
+            <h2 id="animal-guide-title">동물상별 대표 특징</h2>
+            <div class="animal-guide-grid">
+                <article><strong>🐶 강아지상</strong><span>부드러운 눈매, 둥근 얼굴형, 편안한 미소</span></article>
+                <article><strong>🐱 고양이상</strong><span>길고 선명한 눈매, 올라간 눈꼬리, 세련된 얼굴선</span></article>
+                <article><strong>🐰 토끼상</strong><span>동그란 눈, 작은 코와 입, 맑고 귀여운 분위기</span></article>
+                <article><strong>🦊 여우상</strong><span>날렵한 눈매, 선명한 턱선, 영리한 인상</span></article>
+                <article><strong>🦌 사슴상</strong><span>큰 눈, 여린 얼굴선, 청순하고 차분한 분위기</span></article>
+                <article><strong>🐻 곰상</strong><span>넓고 둥근 얼굴, 포근하고 든든한 인상</span></article>
+                <article><strong>🐺 늑대상</strong><span>강한 눈빛, 각진 턱선, 카리스마 있는 분위기</span></article>
+                <article><strong>🐵 원숭이상</strong><span>표정감 있는 눈과 입, 장난기와 생동감</span></article>
+                <article><strong>🐴 말상</strong><span>긴 얼굴형, 안정적인 세로 비율, 우아한 인상</span></article>
+                <article><strong>🦖 공룡상</strong><span>뚜렷한 골격, 강한 턱선, 개성 있는 존재감</span></article>
+                <article><strong>🐫 낙타상</strong><span>긴 중안부, 깊은 눈매, 나른하고 묵직한 분위기</span></article>
+                <article><strong>🐾 쿼카상</strong><span>자연스러운 미소, 올라간 입꼬리, 밝고 무해한 인상</span></article>
+            </div>
+        </section>
+
+        <section class="content-section" aria-labelledby="faq-title">
+            <p class="eyebrow">자주 묻는 질문</p>
+            <h2 id="faq-title">테스트 이용 전 알아두면 좋은 점</h2>
+            <div class="faq-list">
+                <details>
+                    <summary>사진은 서버에 저장되나요?</summary>
+                    <p>아니요. 얼굴 특징 추출과 점수 계산은 사용자의 브라우저 안에서 처리됩니다. 문의 폼을 직접 제출하지 않는 한 사진 파일은 운영자에게 전송되지 않습니다.</p>
+                </details>
+                <details>
+                    <summary>결과가 과학적 진단인가요?</summary>
+                    <p>아니요. 이 서비스는 얼굴의 분위기와 인상을 바탕으로 한 재미용 콘텐츠입니다. 의료, 신원 확인, 성격 진단 목적으로 사용하지 않습니다.</p>
+                </details>
+                <details>
+                    <summary>좋은 결과를 얻으려면 어떤 사진이 좋나요?</summary>
+                    <p>얼굴이 정면에 가깝고 밝게 보이며 한 명만 선명하게 나온 사진을 권장합니다. 얼굴이 가려지거나 여러 명이 함께 나온 사진은 분석이 제한될 수 있습니다.</p>
+                </details>
+            </div>
+        </section>
+
         <section class="contact-section" aria-labelledby="contact-title">
             <h2 id="contact-title">제휴 문의</h2>
             <form class="contact-form" action="https://formspree.io/f/xojrbwwv" method="POST">
@@ -84,6 +154,13 @@
                 <button type="submit">문의 보내기</button>
             </form>
         </section>
+
+        <footer class="site-footer">
+            <a href="about.html">서비스 소개</a>
+            <a href="privacy.html">개인정보처리방침</a>
+            <a href="ads.txt">ads.txt</a>
+            <span>© 2026 동물상 AI 얼굴 분석</span>
+        </footer>
     </div>
     <script type="module" src="main.js"></script>
 </body>

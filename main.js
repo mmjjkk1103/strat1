@@ -5,6 +5,8 @@ const themeButtons = document.querySelectorAll('.theme-toggle');
 const savedTheme = localStorage.getItem('theme') || 'light';
 const startCameraButton = document.getElementById('start-camera');
 const webcamContainer = document.getElementById('webcam-container');
+const imageUpload = document.getElementById('image-upload');
+const imagePreview = document.getElementById('image-preview');
 const labelContainer = document.getElementById('label-container');
 const moodResult = document.querySelector('.mood-result');
 const moodEmoji = document.getElementById('mood-emoji');
@@ -25,6 +27,7 @@ themeButtons.forEach((button) => {
 });
 
 startCameraButton.addEventListener('click', initMoodChecker);
+imageUpload.addEventListener('change', handleImageUpload);
 
 function setTheme(theme) {
     document.body.dataset.theme = theme;
@@ -48,11 +51,7 @@ async function initMoodChecker() {
     moodConfidence.textContent = '잠시만 기다려 주세요.';
 
     try {
-        const modelURL = MODEL_URL + 'model.json';
-        const metadataURL = MODEL_URL + 'metadata.json';
-
-        model = await tmImage.load(modelURL, metadataURL);
-        maxPredictions = model.getTotalClasses();
+        await loadModel();
 
         webcam = new tmImage.Webcam(260, 260, true);
         await webcam.setup();
@@ -77,6 +76,19 @@ async function initMoodChecker() {
     }
 }
 
+async function loadModel() {
+    if (model) {
+        return;
+    }
+
+    const modelURL = MODEL_URL + 'model.json';
+    const metadataURL = MODEL_URL + 'metadata.json';
+
+    model = await tmImage.load(modelURL, metadataURL);
+    maxPredictions = model.getTotalClasses();
+    createPredictionRows();
+}
+
 async function loop() {
     if (!isRunning) {
         return;
@@ -89,6 +101,41 @@ async function loop() {
 
 async function predictMood() {
     const predictions = await model.predict(webcam.canvas);
+    renderPredictions(predictions);
+}
+
+async function handleImageUpload(event) {
+    const file = event.target.files[0];
+
+    if (!file) {
+        return;
+    }
+
+    moodResult.classList.remove('happy', 'unhappy');
+    moodEmoji.textContent = '🖼️';
+    moodTitle.textContent = '이미지를 분석하고 있어요';
+    moodConfidence.textContent = '업로드한 표정 이미지를 모델에 전달합니다.';
+
+    try {
+        await loadModel();
+        const imageURL = URL.createObjectURL(file);
+        imagePreview.src = imageURL;
+        imagePreview.classList.add('visible');
+
+        imagePreview.onload = async () => {
+            const predictions = await model.predict(imagePreview);
+            renderPredictions(predictions);
+            URL.revokeObjectURL(imageURL);
+        };
+    } catch (error) {
+        console.error(error);
+        moodEmoji.textContent = '⚠️';
+        moodTitle.textContent = '이미지를 분석할 수 없습니다';
+        moodConfidence.textContent = '다른 이미지 파일로 다시 시도해 주세요.';
+    }
+}
+
+function renderPredictions(predictions) {
     const sortedPredictions = [...predictions].sort((a, b) => b.probability - a.probability);
     const topPrediction = sortedPredictions[0];
 

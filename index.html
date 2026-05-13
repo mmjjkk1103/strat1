@@ -26,6 +26,11 @@
             <button id="start-camera" type="button">카메라 시작</button>
 
             <div id="webcam-container" class="webcam-container" aria-label="카메라 미리보기"></div>
+            <div class="upload-panel">
+                <label for="image-upload">이미지 파일로 분석</label>
+                <input id="image-upload" type="file" accept="image/*">
+                <img id="image-preview" class="image-preview" alt="업로드한 표정 이미지 미리보기">
+            </div>
             <div id="label-container" class="label-container" aria-label="분석 결과"></div>
         </main>
 

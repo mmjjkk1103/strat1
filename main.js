@@ -162,10 +162,15 @@ function updatePredictionRows(predictions) {
     predictions.forEach((prediction, index) => {
         const row = labelContainer.children[index];
         const percent = Math.round(prediction.probability * 100);
+        const mood = getMoodType(prediction.className);
+        const fill = row.querySelector('.prediction-fill');
 
-        row.querySelector('.prediction-name').textContent = formatClassName(prediction.className);
+        row.querySelector('.prediction-name').textContent = getMoodEmoji(prediction.className);
+        row.querySelector('.prediction-name').setAttribute('aria-label', formatClassName(prediction.className));
         row.querySelector('.prediction-percent').textContent = `${percent}%`;
-        row.querySelector('.prediction-fill').style.width = `${percent}%`;
+        fill.classList.toggle('happy', mood === 'happy');
+        fill.classList.toggle('unhappy', mood === 'unhappy');
+        fill.style.width = `${percent}%`;
     });
 }
 
@@ -178,6 +183,10 @@ function updateMoodResult(prediction) {
     moodEmoji.textContent = mood === 'happy' ? '😊' : '😟';
     moodTitle.textContent = mood === 'happy' ? '기분 좋은 표정이에요' : '기분이 좋지 않은 표정이에요';
     moodConfidence.textContent = `${formatClassName(prediction.className)} 가능성 ${percent}%`;
+}
+
+function getMoodEmoji(className) {
+    return getMoodType(className) === 'happy' ? '😊' : '😟';
 }
 
 function getMoodType(className) {

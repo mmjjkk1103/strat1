@@ -17,6 +17,10 @@
     --success-text: #166534;
     --warning-bg: #fee2e2;
     --warning-text: #991b1b;
+    --happy-gauge: #ec4899;
+    --happy-gauge-soft: #f9a8d4;
+    --unhappy-gauge: #7c3aed;
+    --unhappy-gauge-soft: #60a5fa;
 }
 
 body[data-theme="dark"] {
@@ -37,6 +41,10 @@ body[data-theme="dark"] {
     --success-text: #dcfce7;
     --warning-bg: #7f1d1d;
     --warning-text: #fee2e2;
+    --happy-gauge: #f472b6;
+    --happy-gauge-soft: #fb7185;
+    --unhappy-gauge: #a78bfa;
+    --unhappy-gauge-soft: #38bdf8;
 }
 
 body {
@@ -222,6 +230,8 @@ body {
 
 .prediction-name {
     font-weight: bold;
+    font-size: 1.5rem;
+    line-height: 1;
 }
 
 .prediction-bar {
@@ -236,8 +246,15 @@ body {
     width: 0%;
     height: 100%;
     border-radius: inherit;
-    background-color: var(--button-bg);
     transition: width 0.2s;
+}
+
+.prediction-fill.happy {
+    background: linear-gradient(90deg, var(--happy-gauge), var(--happy-gauge-soft));
+}
+
+.prediction-fill.unhappy {
+    background: linear-gradient(90deg, var(--unhappy-gauge), var(--unhappy-gauge-soft));
 }
 
 .contact-section {

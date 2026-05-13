@@ -1,20 +1,74 @@
 
+:root {
+    --page-bg: #f0f0f0;
+    --panel-bg: #ffffff;
+    --text-color: #1f2937;
+    --muted-bg: #eeeeee;
+    --button-bg: #007bff;
+    --button-hover-bg: #0056b3;
+    --button-text: #ffffff;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --toggle-bg: #e5e7eb;
+    --toggle-active-bg: #1f2937;
+    --toggle-active-text: #ffffff;
+}
+
+body[data-theme="dark"] {
+    --page-bg: #111827;
+    --panel-bg: #1f2937;
+    --text-color: #f9fafb;
+    --muted-bg: #374151;
+    --button-bg: #60a5fa;
+    --button-hover-bg: #3b82f6;
+    --button-text: #0f172a;
+    --shadow-color: rgba(0, 0, 0, 0.35);
+    --toggle-bg: #374151;
+    --toggle-active-bg: #f9fafb;
+    --toggle-active-text: #111827;
+}
+
 body {
     font-family: sans-serif;
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background-color: #f0f0f0;
+    background-color: var(--page-bg);
+    color: var(--text-color);
     margin: 0;
+    transition: background-color 0.3s, color 0.3s;
 }
 
 .container {
     text-align: center;
     padding: 2rem;
-    background-color: white;
+    background-color: var(--panel-bg);
     border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 8px var(--shadow-color);
+    transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.theme-controls {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.theme-toggle {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 5px;
+    background-color: var(--toggle-bg);
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.theme-toggle.active {
+    background-color: var(--toggle-active-bg);
+    color: var(--toggle-active-text);
 }
 
 .numbers {
@@ -28,12 +82,13 @@ body {
     width: 50px;
     height: 50px;
     border-radius: 50%;
-    background-color: #eee;
+    background-color: var(--muted-bg);
     display: flex;
     justify-content: center;
     align-items: center;
     font-size: 1.5rem;
     font-weight: bold;
+    transition: background-color 0.3s;
 }
 
 #generate {
@@ -41,12 +96,12 @@ body {
     font-size: 1rem;
     border: none;
     border-radius: 5px;
-    background-color: #007bff;
-    color: white;
+    background-color: var(--button-bg);
+    color: var(--button-text);
     cursor: pointer;
     transition: background-color 0.3s;
 }
 
 #generate:hover {
-    background-color: #0056b3;
+    background-color: var(--button-hover-bg);
 }

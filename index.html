@@ -18,6 +18,22 @@
             <!-- Numbers will be generated here -->
         </div>
         <button id="generate">번호 생성</button>
+
+        <section class="contact-section" aria-labelledby="contact-title">
+            <h2 id="contact-title">제휴 문의</h2>
+            <form class="contact-form" action="https://formspree.io/f/xojrbwwv" method="POST">
+                <label for="partner-name">이름</label>
+                <input id="partner-name" name="name" type="text" autocomplete="name" required>
+
+                <label for="partner-email">이메일</label>
+                <input id="partner-email" name="email" type="email" autocomplete="email" required>
+
+                <label for="partner-message">문의 내용</label>
+                <textarea id="partner-message" name="message" rows="4" required></textarea>
+
+                <button type="submit">문의 보내기</button>
+            </form>
+        </section>
     </div>
     <script src="main.js"></script>
 </body>

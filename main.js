@@ -2,156 +2,21 @@ import {
     FaceLandmarker,
     FilesetResolver,
 } from 'https://unpkg.com/@mediapipe/tasks-vision@0.10.35/vision_bundle.mjs';
+import { animalProfiles, featureLabels, quizQuestions } from './animal-data.js';
 
-const animalProfiles = [
-    {
-        id: 'dog',
-        name: '강아지상',
-        emoji: '🐶',
-        keywords: ['부드러움', '친근함', '미소', '둥근 눈매'],
-        summary: '편안하고 다정한 분위기가 먼저 느껴지는 인상입니다.',
-        resultMessage: '당신은 보는 사람을 편하게 만드는 강아지상입니다. 부드러운 눈매와 완만한 얼굴선, 자연스러운 미소가 친근하고 다정한 분위기를 만듭니다.',
-        weights: { roundFace: 0.22, eyeRoundness: 0.18, eyeSoftness: 0.18, smileCurve: 0.24, compactFeatures: 0.1, sharpJaw: -0.12 },
-        commentTemplates: ['눈매가 부드럽고 둥근 편이라 편안한 인상이 잘 살아납니다.', '입꼬리 흐름이 자연스러워 다정하고 친근한 분위기가 큽니다.', '얼굴 윤곽이 날카롭기보다 완만해 강아지상 점수가 높게 나타났습니다.'],
-    },
-    {
-        id: 'cat',
-        name: '고양이상',
-        emoji: '🐱',
-        keywords: ['도도함', '세련됨', '날렵함', '선명한 눈매'],
-        summary: '차분하지만 쉽게 잊히지 않는 세련된 인상입니다.',
-        resultMessage: '당신은 차분하지만 쉽게 잊히지 않는 고양이상입니다. 길고 선명한 눈매와 정돈된 얼굴선이 도도하고 세련된 인상을 줍니다.',
-        weights: { eyeSlenderness: 0.24, eyeTailUp: 0.24, sharpJaw: 0.18, longFace: 0.08, cheekDefinition: 0.1, smileCurve: -0.06 },
-        commentTemplates: ['눈의 가로 흐름이 선명해 차분하고 세련된 느낌이 있습니다.', '눈꼬리 방향이 살짝 올라간 편이라 도도한 분위기가 더해집니다.', '얼굴선이 비교적 정돈되어 고양이상과 잘 맞습니다.'],
-    },
-    {
-        id: 'rabbit',
-        name: '토끼상',
-        emoji: '🐰',
-        keywords: ['맑음', '귀여움', '동그란 눈', '작은 이목구비'],
-        summary: '맑고 귀여운 분위기가 강한 인상입니다.',
-        resultMessage: '당신은 맑고 사랑스러운 토끼상입니다. 동그란 눈망울과 오밀조밀한 이목구비가 깨끗하고 귀여운 분위기를 만들어냅니다.',
-        weights: { eyeRoundness: 0.28, bigEyes: 0.22, compactFeatures: 0.18, smallMouth: 0.12, roundFace: 0.12, sharpJaw: -0.1 },
-        commentTemplates: ['눈매가 둥글게 잡혀 맑고 또렷한 느낌이 큽니다.', '이목구비가 오밀조밀하게 모인 편이라 귀여운 분위기가 살아납니다.', '강한 골격감보다 부드러운 인상이 앞서 토끼상 점수가 높게 나타났습니다.'],
-    },
-    {
-        id: 'fox',
-        name: '여우상',
-        emoji: '🦊',
-        keywords: ['영리함', '날렵함', '올라간 눈꼬리', '선명함'],
-        summary: '날렵하고 영리한 분위기가 돋보이는 인상입니다.',
-        resultMessage: '당신은 영리하고 매력적인 여우상입니다. 긴 눈매와 올라간 눈꼬리, 선명한 턱선이 날렵하고 인상적인 분위기를 만듭니다.',
-        weights: { eyeSlenderness: 0.28, eyeTailUp: 0.24, sharpJaw: 0.18, longFace: 0.1, cheekDefinition: 0.12, eyeSoftness: -0.06 },
-        commentTemplates: ['눈매가 길고 날렵하게 읽혀 영리한 인상이 강합니다.', '눈꼬리의 상승감이 여우상 특유의 선명한 분위기와 잘 맞습니다.', '턱선과 광대 흐름이 또렷해 결과 점수에 반영됐습니다.'],
-    },
-    {
-        id: 'deer',
-        name: '사슴상',
-        emoji: '🦌',
-        keywords: ['청순함', '큰 눈', '여린 선', '맑은 분위기'],
-        summary: '맑고 여린 분위기가 자연스럽게 보이는 인상입니다.',
-        resultMessage: '당신은 맑고 청순한 사슴상입니다. 큰 눈과 여린 얼굴선, 차분한 분위기가 부드럽고 깨끗한 인상을 만들어냅니다.',
-        weights: { bigEyes: 0.3, eyeSoftness: 0.2, longFace: 0.1, smallMouth: 0.1, sharpJaw: -0.14, cheekDefinition: 0.06 },
-        commentTemplates: ['눈 크기와 부드러운 눈매가 맑은 분위기를 만듭니다.', '얼굴선이 강하기보다 여린 쪽에 가까워 사슴상과 잘 맞습니다.', '전체적으로 차분하고 깨끗한 인상이 점수에 반영됐습니다.'],
-    },
-    {
-        id: 'bear',
-        name: '곰상',
-        emoji: '🐻',
-        keywords: ['포근함', '넓은 얼굴', '둥근 윤곽', '묵직함'],
-        summary: '포근하고 든든한 느낌이 중심인 인상입니다.',
-        resultMessage: '당신은 포근하고 든든한 곰상입니다. 넓고 둥근 얼굴형과 안정적인 이목구비가 묵직하면서도 따뜻한 분위기를 만듭니다.',
-        weights: { wideFace: 0.26, roundFace: 0.22, softJaw: 0.16, broadFeatures: 0.12, smileCurve: 0.08, eyeSlenderness: -0.08 },
-        commentTemplates: ['얼굴의 가로 폭과 둥근 윤곽이 안정적으로 보입니다.', '턱선이 날카롭기보다 부드러워 포근한 느낌이 큽니다.', '이목구비가 작게 모이기보다 여유 있게 배치되어 곰상 점수가 올라갔습니다.'],
-    },
-    {
-        id: 'wolf',
-        name: '늑대상',
-        emoji: '🐺',
-        keywords: ['카리스마', '강한 눈빛', '각진 턱선', '선 굵음'],
-        summary: '강하고 또렷한 분위기가 먼저 느껴지는 인상입니다.',
-        resultMessage: '당신은 카리스마 있는 늑대상입니다. 강한 눈빛과 각진 턱선, 선 굵은 이목구비가 단단하고 인상적인 분위기를 만듭니다.',
-        weights: { sharpJaw: 0.28, eyeSlenderness: 0.18, browIntensity: 0.16, broadFeatures: 0.12, longFace: 0.1, smileCurve: -0.08 },
-        commentTemplates: ['턱선과 얼굴 하관이 비교적 또렷해 강한 인상이 느껴집니다.', '눈매가 부드럽기보다 집중감 있게 읽혀 카리스마가 살아납니다.', '선 굵은 이목구비 흐름이 늑대상 점수에 반영됐습니다.'],
-    },
-    {
-        id: 'monkey',
-        name: '원숭이상',
-        emoji: '🐵',
-        keywords: ['장난기', '생동감', '표정감', '활발함'],
-        summary: '표정이 풍부하고 생동감 있는 인상입니다.',
-        resultMessage: '당신은 생동감 넘치는 원숭이상입니다. 눈과 입의 표현감이 살아 있고 얼굴 중심부의 에너지가 밝고 장난기 있는 분위기를 만듭니다.',
-        weights: { expressiveMouth: 0.24, smileCurve: 0.18, compactFeatures: 0.14, cheekDefinition: 0.12, bigEyes: 0.1, broadFeatures: 0.08 },
-        commentTemplates: ['눈과 입 주변의 변화가 잘 보여 표정감이 풍부하게 느껴집니다.', '입매가 생동감 있게 잡혀 밝고 장난기 있는 인상을 줍니다.', '얼굴 중심부의 특징이 또렷해 원숭이상과 잘 연결됩니다.'],
-    },
-    {
-        id: 'horse',
-        name: '말상',
-        emoji: '🐴',
-        keywords: ['긴 얼굴형', '우아함', '시원한 비율', '차분함'],
-        summary: '세로 비율이 길고 시원한 분위기가 있는 인상입니다.',
-        resultMessage: '당신은 시원하고 우아한 말상입니다. 긴 얼굴형과 안정적인 세로 비율이 단정하면서도 고급스러운 분위기를 만들어냅니다.',
-        weights: { longFace: 0.34, longMidface: 0.2, broadFeatures: 0.1, eyeSoftness: 0.08, smallMouth: 0.06, roundFace: -0.12 },
-        commentTemplates: ['얼굴의 세로 비율이 비교적 길게 나타나 시원한 인상을 줍니다.', '중안부 흐름이 안정적이라 우아한 분위기가 살아납니다.', '둥근 귀여움보다 길고 단정한 비율이 말상 점수에 반영됐습니다.'],
-    },
-    {
-        id: 'dinosaur',
-        name: '공룡상',
-        emoji: '🦖',
-        keywords: ['존재감', '뚜렷한 골격', '강한 턱선', '개성'],
-        summary: '한 번 보면 기억에 남는 존재감 있는 인상입니다.',
-        resultMessage: '당신은 한 번 보면 쉽게 기억되는 공룡상입니다. 뚜렷한 골격과 강한 턱선, 선명한 이목구비가 존재감 있는 분위기를 만듭니다.',
-        weights: { sharpJaw: 0.3, browIntensity: 0.18, cheekDefinition: 0.16, broadFeatures: 0.14, longFace: 0.08, eyeSoftness: -0.08 },
-        commentTemplates: ['턱선과 얼굴 골격의 존재감이 비교적 크게 나타납니다.', '이목구비의 대비가 선명해 개성 있는 인상으로 읽힙니다.', '부드러운 인상보다 뚜렷한 구조감이 공룡상 점수를 끌어올렸습니다.'],
-    },
-    {
-        id: 'camel',
-        name: '낙타상',
-        emoji: '🐫',
-        keywords: ['긴 중안부', '나른함', '깊은 눈매', '묵직함'],
-        summary: '차분하고 깊이 있는 분위기가 남는 인상입니다.',
-        resultMessage: '당신은 차분하고 깊이 있는 낙타상입니다. 긴 중안부와 나른한 눈매, 묵직한 얼굴선이 여유롭고 독특한 분위기를 만듭니다.',
-        weights: { longMidface: 0.3, longFace: 0.18, eyeSlenderness: 0.14, browIntensity: 0.1, wideEyeGap: 0.08, smileCurve: -0.08 },
-        commentTemplates: ['중안부 비율이 길게 나타나 차분하고 깊은 분위기가 있습니다.', '눈매가 또렷하면서도 살짝 나른하게 읽힙니다.', '밝은 미소형보다 묵직한 인상이 낙타상 점수에 반영됐습니다.'],
-    },
-    {
-        id: 'quokka',
-        name: '쿼카상',
-        emoji: '🐾',
-        keywords: ['밝음', '무해함', '미소', '친근함'],
-        summary: '밝고 무해한 미소가 매력적인 인상입니다.',
-        resultMessage: '당신은 보는 사람까지 기분 좋게 만드는 쿼카상입니다. 자연스럽게 올라간 입꼬리와 부드러운 눈매가 밝고 무해한 분위기를 만들어냅니다.',
-        weights: { smileCurve: 0.3, mouthCornerUp: 0.22, eyeSoftness: 0.18, roundFace: 0.12, compactFeatures: 0.08, sharpJaw: -0.1 },
-        commentTemplates: ['입꼬리가 자연스럽게 올라가 밝은 인상이 강합니다.', '눈매가 부드럽게 읽혀 무해하고 편안한 분위기를 만듭니다.', '얼굴 윤곽도 날카롭기보다 완만해 쿼카상 점수가 높게 나타났습니다.'],
-    },
+const animalById = Object.fromEntries(animalProfiles.map((animal) => [animal.id, animal]));
+const validImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
+const loadingSteps = [
+    '얼굴 윤곽을 살펴보고 있어요...',
+    '눈매와 입꼬리의 분위기를 분석 중입니다...',
+    '12가지 동물상과 비교하고 있어요...',
+    '당신만의 동물상 결과를 정리하는 중입니다...',
 ];
 
-const featureLabels = {
-    roundFace: '둥근 얼굴형',
-    longFace: '긴 얼굴형',
-    wideFace: '넓은 얼굴형',
-    sharpJaw: '선명한 턱선',
-    softJaw: '부드러운 턱선',
-    cheekDefinition: '또렷한 광대 흐름',
-    bigEyes: '큰 눈',
-    eyeRoundness: '둥근 눈망울',
-    eyeSlenderness: '길고 날렵한 눈매',
-    eyeTailUp: '올라간 눈꼬리',
-    eyeSoftness: '부드러운 눈매',
-    wideEyeGap: '넓은 눈 사이 간격',
-    longMidface: '긴 중안부',
-    smallMouth: '작은 입매',
-    expressiveMouth: '표현감 있는 입매',
-    smileCurve: '밝은 미소',
-    mouthCornerUp: '올라간 입꼬리',
-    compactFeatures: '오밀조밀한 이목구비',
-    broadFeatures: '큼직한 이목구비',
-    browIntensity: '강한 눈썹과 눈빛',
-};
-
 const themeButtons = document.querySelectorAll('.theme-toggle');
-const savedTheme = localStorage.getItem('theme') || 'light';
+const heroCameraButton = document.getElementById('hero-camera');
 const imageUpload = document.getElementById('image-upload');
+const dropZone = document.getElementById('drop-zone');
 const startCameraButton = document.getElementById('start-camera');
 const cameraPanel = document.getElementById('camera-panel');
 const cameraVideo = document.getElementById('camera-video');
@@ -159,37 +24,111 @@ const capturePhotoButton = document.getElementById('capture-photo');
 const retakePhotoButton = document.getElementById('retake-photo');
 const previewPanel = document.getElementById('preview-panel');
 const imagePreview = document.getElementById('image-preview');
+const removeImageButton = document.getElementById('remove-image');
 const analyzeButton = document.getElementById('analyze-button');
 const statusMessage = document.getElementById('status-message');
 const loadingPanel = document.getElementById('loading-panel');
+const loadingStep = document.getElementById('loading-step');
+const loadingProgress = document.getElementById('loading-progress');
+const progressBar = document.getElementById('progress-bar');
 const resultPanel = document.getElementById('result-panel');
 const winnerCard = document.getElementById('winner-card');
 const featureComments = document.getElementById('feature-comments');
+const featureSummary = document.getElementById('feature-summary');
 const topThree = document.getElementById('top-three');
+const comboSummary = document.getElementById('combo-summary');
 const scoreList = document.getElementById('score-list');
+const resultDetail = document.getElementById('result-detail');
+const compatibilityList = document.getElementById('compatibility-list');
+const selfQuiz = document.getElementById('self-quiz');
+const quizResult = document.getElementById('quiz-result');
+const saveCardButton = document.getElementById('save-card');
+const copyLinkButton = document.getElementById('copy-link');
+const shareResultButton = document.getElementById('share-result');
+const compareToggle = document.getElementById('compare-toggle');
+const comparePanel = document.getElementById('compare-panel');
+const compareUpload = document.getElementById('compare-upload');
+const compareCameraButton = document.getElementById('compare-camera');
+const comparePreview = document.getElementById('compare-preview');
+const compareImage = document.getElementById('compare-image');
+const analyzeCompareButton = document.getElementById('analyze-compare');
+const compareResult = document.getElementById('compare-result');
 const resetButton = document.getElementById('reset-button');
+const animalGuideGrid = document.getElementById('animal-guide-grid');
+const guideModal = document.getElementById('guide-modal');
+const modalContent = document.getElementById('modal-content');
 
 let faceLandmarker;
 let cameraStream;
+let captureTarget = 'main';
 let capturedCanvas;
+let compareCanvas;
+let currentResult;
+let comparePersonResult;
+let loadingTimer;
 
-setTheme(savedTheme);
+init();
 
-themeButtons.forEach((button) => {
-    button.addEventListener('click', () => setTheme(button.dataset.theme));
-});
+function init() {
+    setTheme(localStorage.getItem('theme') || 'light');
+    renderAnimalGuide();
+    renderSelfQuiz();
+    bindEvents();
+}
 
-imageUpload.addEventListener('change', handleImageUpload);
-startCameraButton.addEventListener('click', startCamera);
-capturePhotoButton.addEventListener('click', capturePhoto);
-retakePhotoButton.addEventListener('click', retakePhoto);
-analyzeButton.addEventListener('click', analyzeCurrentImage);
-resetButton.addEventListener('click', resetTester);
+function bindEvents() {
+    themeButtons.forEach((button) => button.addEventListener('click', () => setTheme(button.dataset.theme)));
+    imageUpload.addEventListener('change', (event) => handleImageFile(event.target.files[0], 'main'));
+    compareUpload.addEventListener('change', (event) => handleImageFile(event.target.files[0], 'compare'));
+    dropZone.addEventListener('click', (event) => {
+        if (event.target !== imageUpload) imageUpload.click();
+    });
+    dropZone.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            imageUpload.click();
+        }
+    });
+    ['dragenter', 'dragover'].forEach((eventName) => {
+        dropZone.addEventListener(eventName, (event) => {
+            event.preventDefault();
+            dropZone.classList.add('is-dragover');
+        });
+    });
+    ['dragleave', 'drop'].forEach((eventName) => {
+        dropZone.addEventListener(eventName, (event) => {
+            event.preventDefault();
+            dropZone.classList.remove('is-dragover');
+        });
+    });
+    dropZone.addEventListener('drop', (event) => handleImageFile(event.dataTransfer.files[0], 'main'));
+    heroCameraButton.addEventListener('click', () => startCamera('main'));
+    startCameraButton.addEventListener('click', () => startCamera('main'));
+    compareCameraButton.addEventListener('click', () => startCamera('compare'));
+    capturePhotoButton.addEventListener('click', capturePhoto);
+    retakePhotoButton.addEventListener('click', () => startCamera(captureTarget));
+    removeImageButton.addEventListener('click', clearMainImage);
+    analyzeButton.addEventListener('click', () => analyzeCurrentImage('main'));
+    analyzeCompareButton.addEventListener('click', () => analyzeCurrentImage('compare'));
+    saveCardButton.addEventListener('click', saveResultCard);
+    copyLinkButton.addEventListener('click', copyResultLink);
+    shareResultButton.addEventListener('click', shareResult);
+    compareToggle.addEventListener('click', () => {
+        comparePanel.hidden = !comparePanel.hidden;
+        if (!comparePanel.hidden) comparePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    resetButton.addEventListener('click', resetTester);
+    guideModal.addEventListener('click', (event) => {
+        if (event.target.matches('[data-close-modal]')) closeGuideModal();
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !guideModal.hidden) closeGuideModal();
+    });
+}
 
 function setTheme(theme) {
     document.body.dataset.theme = theme;
     localStorage.setItem('theme', theme);
-
     themeButtons.forEach((button) => {
         const isActive = button.dataset.theme === theme;
         button.classList.toggle('active', isActive);
@@ -197,24 +136,29 @@ function setTheme(theme) {
     });
 }
 
-async function handleImageUpload(event) {
-    const file = event.target.files[0];
-
-    if (!file) {
-        return;
-    }
-
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+function handleImageFile(file, target) {
+    if (!file) return;
+    if (!validImageTypes.includes(file.type)) {
         showStatus('jpg, jpeg, png, webp 형식의 사진을 업로드해주세요.', true);
         return;
     }
 
     stopCamera();
+    const imageURL = URL.createObjectURL(file);
+
+    if (target === 'compare') {
+        compareCanvas = null;
+        compareImage.onload = () => URL.revokeObjectURL(imageURL);
+        compareImage.src = imageURL;
+        comparePreview.hidden = false;
+        compareResult.innerHTML = '';
+        showStatus('친구 사진이 준비되었습니다. 친구 결과 분석을 눌러주세요.', false);
+        return;
+    }
+
     hideResult();
     hideLoading();
     capturedCanvas = null;
-
-    const imageURL = URL.createObjectURL(file);
     imagePreview.onload = () => URL.revokeObjectURL(imageURL);
     imagePreview.src = imageURL;
     previewPanel.hidden = false;
@@ -222,27 +166,28 @@ async function handleImageUpload(event) {
     showStatus('사진이 준비되었습니다. AI 분석 시작을 눌러주세요.', false);
 }
 
-async function startCamera() {
-    hideResult();
+async function startCamera(target = 'main') {
+    captureTarget = target;
     hideLoading();
-    capturedCanvas = null;
-    previewPanel.hidden = true;
+    if (target === 'main') hideResult();
     cameraPanel.hidden = false;
+    previewPanel.hidden = target === 'main';
     retakePhotoButton.hidden = true;
     capturePhotoButton.hidden = false;
+    document.getElementById('start-test').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     try {
         stopCamera();
         cameraStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'user', width: { ideal: 960 }, height: { ideal: 960 } },
+            video: { facingMode: 'user', width: { ideal: 1080 }, height: { ideal: 1080 } },
             audio: false,
         });
         cameraVideo.srcObject = cameraStream;
-        showStatus('카메라 화면에서 얼굴이 잘 보이면 촬영하기를 눌러주세요.', false);
+        showStatus(target === 'compare' ? '친구 얼굴이 프레임 안에 들어오면 촬영해주세요.' : '얼굴이 프레임 안에 들어오면 촬영하기를 눌러주세요.', false);
     } catch (error) {
         console.error(error);
         cameraPanel.hidden = true;
-        showStatus('카메라를 시작할 수 없습니다. 브라우저 권한과 HTTPS 접속 상태를 확인해 주세요.', true);
+        showStatus('카메라 권한이 거부되었거나 사용할 수 없습니다. 브라우저 권한과 HTTPS 접속 상태를 확인해 주세요.', true);
     }
 }
 
@@ -259,77 +204,77 @@ function capturePhoto() {
     context.translate(canvas.width, 0);
     context.scale(-1, 1);
     context.drawImage(cameraVideo, 0, 0, canvas.width, canvas.height);
-    capturedCanvas = canvas;
-
-    imagePreview.src = canvas.toDataURL('image/png');
-    previewPanel.hidden = false;
+    stopCamera();
     capturePhotoButton.hidden = true;
     retakePhotoButton.hidden = false;
-    stopCamera();
-    showStatus('촬영한 사진이 준비되었습니다. AI 분석 시작을 눌러주세요.', false);
-}
 
-function retakePhoto() {
-    imagePreview.removeAttribute('src');
-    previewPanel.hidden = true;
-    startCamera();
-}
-
-async function analyzeCurrentImage() {
-    const source = capturedCanvas || imagePreview;
-
-    if (!source || (!capturedCanvas && !imagePreview.src)) {
-        showStatus('분석할 사진을 먼저 준비해주세요.', true);
+    if (captureTarget === 'compare') {
+        compareCanvas = canvas;
+        compareImage.src = canvas.toDataURL('image/png');
+        comparePreview.hidden = false;
+        showStatus('친구 사진이 준비되었습니다. 친구 결과 분석을 눌러주세요.', false);
+        comparePanel.hidden = false;
+        comparePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
     }
 
-    analyzeButton.disabled = true;
+    capturedCanvas = canvas;
+    imagePreview.src = canvas.toDataURL('image/png');
+    previewPanel.hidden = false;
+    showStatus('촬영한 사진이 준비되었습니다. AI 분석 시작을 눌러주세요.', false);
+}
+
+async function analyzeCurrentImage(target) {
+    const isCompare = target === 'compare';
+    const source = isCompare ? (compareCanvas || compareImage) : (capturedCanvas || imagePreview);
+    const button = isCompare ? analyzeCompareButton : analyzeButton;
+
+    if (!source || (!isCompare && !capturedCanvas && !imagePreview.src) || (isCompare && !compareCanvas && !compareImage.src)) {
+        showStatus(isCompare ? '비교할 친구 사진을 먼저 준비해주세요.' : '분석할 사진을 먼저 준비해주세요.', true);
+        return;
+    }
+
+    button.disabled = true;
     showLoading();
 
     try {
         await waitForImageReady(source);
+        await runLoadingSequence();
         const detector = await getFaceLandmarker();
         const result = detector.detect(source);
         const faceCount = result.faceLandmarks.length;
 
-        await delay(900);
-
-        if (faceCount === 0) {
-            throw new Error('NO_FACE');
-        }
-
-        if (faceCount > 1) {
-            throw new Error('MULTIPLE_FACES');
-        }
+        if (faceCount === 0) throw new Error('NO_FACE');
+        if (faceCount > 1) throw new Error('MULTIPLE_FACES');
 
         const features = extractFaceFeatures(result.faceLandmarks[0]);
         const scores = calculateAnimalScores(features);
-        renderResult(scores, features);
-        showStatus('분석이 완료되었습니다.', false);
+        const analysis = { scores, features, winner: scores[0], top: scores.slice(0, 3) };
+
+        if (isCompare) {
+            comparePersonResult = analysis;
+            renderCompareResult();
+            resultPanel.hidden = false;
+            comparePanel.hidden = false;
+            comparePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            showStatus('친구 결과 분석이 완료되었습니다.', false);
+        } else {
+            currentResult = analysis;
+            renderResult(analysis);
+            showStatus('분석이 완료되었습니다. 결과 카드를 저장하거나 친구와 비교해보세요.', false);
+        }
     } catch (error) {
         console.error(error);
-        hideLoading();
-        if (error.message === 'NO_FACE') {
-            showStatus('얼굴이 잘 보이는 사진을 업로드해주세요.', true);
-        } else if (error.message === 'MULTIPLE_FACES') {
-            showStatus('한 명의 얼굴만 선명하게 나온 사진을 사용해주세요.', true);
-        } else {
-            showStatus('얼굴 분석 모델을 불러오지 못했습니다. 네트워크 상태를 확인한 뒤 다시 시도해 주세요.', true);
-        }
+        handleAnalyzeError(error);
     } finally {
-        analyzeButton.disabled = false;
+        hideLoading();
+        button.disabled = false;
     }
 }
 
 async function getFaceLandmarker() {
-    if (faceLandmarker) {
-        return faceLandmarker;
-    }
-
-    const filesetResolver = await FilesetResolver.forVisionTasks(
-        'https://unpkg.com/@mediapipe/tasks-vision@0.10.35/wasm',
-    );
-
+    if (faceLandmarker) return faceLandmarker;
+    const filesetResolver = await FilesetResolver.forVisionTasks('https://unpkg.com/@mediapipe/tasks-vision@0.10.35/wasm');
     faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
         baseOptions: {
             modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task',
@@ -338,7 +283,6 @@ async function getFaceLandmarker() {
         runningMode: 'IMAGE',
         numFaces: 3,
     });
-
     return faceLandmarker;
 }
 
@@ -362,13 +306,8 @@ function extractFaceFeatures(landmarks) {
     const midface = distance(landmarks[168], landmarks[2]) / Math.max(faceHeight, 0.001);
     const eyeGap = distance(landmarks[133], landmarks[362]) / Math.max(faceWidth, 0.001);
     const facialFeatureSpan = distance(landmarks[33], landmarks[263]) / Math.max(faceWidth, 0.001);
-    const browEyeGap = (
-        Math.abs(landmarks[105].y - landmarks[159].y) +
-        Math.abs(landmarks[334].y - landmarks[386].y)
-    ) / 2 / Math.max(faceHeight, 0.001);
+    const browEyeGap = (Math.abs(landmarks[105].y - landmarks[159].y) + Math.abs(landmarks[334].y - landmarks[386].y)) / 2 / Math.max(faceHeight, 0.001);
     const eyeTailTilt = ((landmarks[33].y - landmarks[133].y) + (landmarks[263].y - landmarks[362].y)) / 2;
-
-    // 랜드마크 거리값을 0~1 특징값으로 정규화해 추후 서버 모델로 쉽게 교체할 수 있게 분리했습니다.
     const sharpJaw = clamp01((0.72 - chinWidthRatio) / 0.22 + (cheekWidth / faceWidth - 0.82) * 0.8);
     const smileCurve = clamp01((mouthCenterY - mouthCornerY + 0.006) / 0.045);
 
@@ -398,71 +337,83 @@ function extractFaceFeatures(landmarks) {
 
 function calculateAnimalScores(features) {
     const rawScores = animalProfiles.map((animal) => {
-        const weightedScore = Object.entries(animal.weights).reduce((sum, [feature, weight]) => {
-            return sum + (features[feature] ?? 0.5) * weight;
-        }, 0);
-
-        return {
-            ...animal,
-            rawScore: Math.max(0.04, weightedScore + 0.38),
-        };
+        const weightedScore = Object.entries(animal.weights).reduce((sum, [feature, weight]) => sum + (features[feature] ?? 0.5) * weight, 0);
+        return { ...animal, rawScore: Math.max(0.04, weightedScore + 0.38) };
     });
-
     const total = rawScores.reduce((sum, animal) => sum + animal.rawScore, 0);
-    const normalized = rawScores
-        .map((animal) => ({ ...animal, percent: Math.max(1, Math.round((animal.rawScore / total) * 100)) }))
-        .sort((a, b) => b.percent - a.percent);
-
+    const normalized = rawScores.map((animal) => ({ ...animal, percent: Math.max(1, Math.round((animal.rawScore / total) * 100)) })).sort((a, b) => b.percent - a.percent);
     return normalizeRoundedPercents(normalized);
 }
 
 function normalizeRoundedPercents(scores) {
-    const diff = 100 - scores.reduce((sum, score) => sum + score.percent, 0);
-    scores[0].percent += diff;
+    let diff = 100 - scores.reduce((sum, score) => sum + score.percent, 0);
+    let index = 0;
+    while (diff !== 0 && scores.length) {
+        const direction = diff > 0 ? 1 : -1;
+        if (scores[index].percent + direction > 0) {
+            scores[index].percent += direction;
+            diff -= direction;
+        }
+        index = (index + 1) % scores.length;
+    }
     return scores;
 }
 
-function renderResult(scores, features) {
-    const winner = scores[0];
-    const top = scores.slice(0, 3);
-
+function renderResult({ scores, features, winner, top }) {
     winnerCard.innerHTML = `
-        <div class="winner-emoji">${winner.emoji}</div>
-        <p class="winner-label">최종 판정</p>
-        <h2>당신은 ${winner.name}입니다!</h2>
-        <p class="winner-percent">가장 높은 일치도: ${winner.percent}%</p>
-        <p class="winner-message">${winner.resultMessage}</p>
-        <div class="keyword-row">${winner.keywords.map((keyword) => `<span>${keyword}</span>`).join('')}</div>
+        <div class="winner-main">
+            <div class="winner-emoji">${winner.emoji}</div>
+            <p class="winner-label">최종 동물상</p>
+            <h2>당신은 ${winner.name}입니다</h2>
+            <p class="winner-percent">가장 높은 일치도 ${winner.percent}%</p>
+            <p class="winner-message">${winner.tagline}. ${winner.resultMessage}</p>
+            <div class="keyword-row">${winner.keywords.map((keyword) => `<span>${keyword}</span>`).join('')}</div>
+        </div>
     `;
 
-    featureComments.innerHTML = buildFeatureComments(winner, top, features)
-        .map((comment) => `<p>${comment}</p>`)
-        .join('');
+    const comments = buildFeatureComments(winner, top, features);
+    featureComments.innerHTML = comments.slice(0, 3).map((comment) => `<p>${comment}</p>`).join('');
+    featureSummary.textContent = `이러한 특징이 ${top.map((animal) => animal.name).join('·')} 계열 점수를 높였습니다.`;
 
-    topThree.innerHTML = top
-        .map((animal, index) => `
-            <div class="top-item">
-                <span class="top-rank">${index + 1}위</span>
-                <span class="top-animal">${animal.emoji} ${animal.name}</span>
-                <strong>${animal.percent}%</strong>
-            </div>
-        `)
-        .join('');
+    topThree.innerHTML = top.map((animal, index) => `
+        <div class="top-item">
+            <span class="top-rank">${index + 1}위</span>
+            <span class="top-animal">${animal.emoji} ${animal.name}</span>
+            <strong>${animal.percent}%</strong>
+        </div>
+    `).join('');
+    comboSummary.textContent = buildComboSummary(top);
 
-    scoreList.innerHTML = scores
-        .map((animal, index) => `
-            <div class="score-row ${index === 0 ? 'is-winner' : ''}">
-                <div class="score-head">
-                    <span>${animal.emoji} ${animal.name}</span>
-                    <strong>${animal.percent}%</strong>
-                </div>
-                <div class="score-bar"><span style="width: ${animal.percent}%"></span></div>
-            </div>
-        `)
-        .join('');
+    scoreList.innerHTML = scores.map((animal, index) => `
+        <div class="score-row ${index < 3 ? 'is-top' : ''}">
+            <div class="score-head"><span>${index + 1}. ${animal.emoji} ${animal.name}</span><strong>${animal.percent}%</strong></div>
+            <div class="score-bar"><span data-width="${animal.percent}%"></span></div>
+        </div>
+    `).join('');
 
-    hideLoading();
+    resultDetail.innerHTML = [
+        `<p><strong>첫인상</strong><br>${winner.firstImpression}</p>`,
+        `<p><strong>웃을 때 드러나는 매력</strong><br>${winner.smileCharm}</p>`,
+        `<p><strong>사람들이 느끼는 분위기</strong><br>${winner.mood}</p>`,
+        `<p><strong>비슷하지만 다른 유형</strong><br>${winner.difference}</p>`,
+    ].join('');
+
+    compatibilityList.innerHTML = `
+        ${winner.compat.map((id) => {
+            const animal = animalById[id];
+            return `<div class="compat-chip"><span>${animal.emoji}</span><span>${animal.name}</span></div>`;
+        }).join('')}
+        <p class="combo-summary">${winner.compatText}</p>
+    `;
+
+    quizResult.textContent = '질문을 선택하면 AI 결과와 내가 생각하는 분위기를 함께 비교해드립니다.';
     resultPanel.hidden = false;
+    resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    requestAnimationFrame(() => {
+        scoreList.querySelectorAll('.score-bar span').forEach((bar) => {
+            bar.style.width = bar.dataset.width;
+        });
+    });
 }
 
 function buildFeatureComments(winner, top, features) {
@@ -472,33 +423,276 @@ function buildFeatureComments(winner, top, features) {
         .slice(0, 2)
         .map(([feature]) => featureLabels[feature])
         .filter(Boolean);
-
-    const comments = [...winner.commentTemplates.slice(0, 3)];
-
-    if (activeFeatures.length) {
-        comments.splice(1, 0, `${activeFeatures.join(', ')} 특징이 특히 두드러지게 계산됐습니다.`);
-    }
-
+    const comments = [...winner.commentTemplates];
+    if (activeFeatures.length) comments.splice(1, 0, `${activeFeatures.join(', ')} 특징이 특히 두드러지게 계산됐습니다.`);
     comments.push(`따라서 ${top.map((animal) => animal.name).join(', ')} 점수가 높게 나타났습니다.`);
     return comments.slice(0, 4);
+}
+
+function buildComboSummary(top) {
+    const [first, second, third] = top;
+    const softIds = ['dog', 'rabbit', 'deer', 'bear', 'quokka'];
+    const sharpIds = ['cat', 'fox', 'wolf', 'dinosaur', 'camel'];
+    const activeIds = ['monkey', 'quokka', 'dog'];
+    const ids = top.map((animal) => animal.id);
+    const sharpCount = ids.filter((id) => sharpIds.includes(id)).length;
+    const softCount = ids.filter((id) => softIds.includes(id)).length;
+    const activeCount = ids.filter((id) => activeIds.includes(id)).length;
+
+    if (sharpCount >= 2) return `${first.name} + ${second.name} + ${third.name} 조합은 선명한 눈매와 존재감이 중심을 이루며, 차분하지만 강한 인상이 남는 카리스마형 조합입니다.`;
+    if (softCount >= 2 && activeCount >= 1) return `${first.name} + ${second.name} + ${third.name} 조합은 밝고 친근한 인상이 강하며, 귀여움과 부드러운 분위기가 함께 나타나는 조합입니다.`;
+    if (ids.includes('horse') || ids.includes('camel')) return `${first.name} + ${second.name} + ${third.name} 조합은 시원한 비율과 차분한 분위기가 섞여 단정하고 여유로운 인상을 만듭니다.`;
+    return `${first.name} + ${second.name} + ${third.name} 조합은 한 가지 분위기에 치우치기보다 친근함, 선명함, 개성이 균형 있게 섞인 타입입니다.`;
+}
+
+function renderAnimalGuide() {
+    animalGuideGrid.innerHTML = animalProfiles.map((animal) => `
+        <button class="animal-guide-card" type="button" data-animal-id="${animal.id}" aria-label="${animal.name} 도감 열기">
+            <div class="emoji">${animal.emoji}</div>
+            <h3>${animal.name}</h3>
+            <p>${animal.guide}</p>
+        </button>
+    `).join('');
+    animalGuideGrid.querySelectorAll('button').forEach((button) => {
+        button.addEventListener('click', () => openGuideModal(button.dataset.animalId));
+    });
+}
+
+function openGuideModal(id) {
+    const animal = animalById[id];
+    modalContent.innerHTML = `
+        <div class="modal-emoji">${animal.emoji}</div>
+        <h2>${animal.name}</h2>
+        <p>${animal.summary}</p>
+        <ul>${animal.keywords.map((keyword) => `<li>${keyword}</li>`).join('')}</ul>
+        <p><strong>이런 분위기의 얼굴</strong><br>${animal.guide}</p>
+        <p><strong>웃을 때 매력</strong><br>${animal.smileCharm}</p>
+        <p><strong>비슷하지만 다른 유형</strong><br>${animal.difference}</p>
+    `;
+    guideModal.hidden = false;
+}
+
+function closeGuideModal() {
+    guideModal.hidden = true;
+}
+
+function renderSelfQuiz() {
+    selfQuiz.innerHTML = quizQuestions.map((question, questionIndex) => `
+        <div class="quiz-question">
+            <strong>${question.question}</strong>
+            <div class="quiz-options">
+                ${question.options.map((option, optionIndex) => `
+                    <label><input type="radio" name="quiz-${questionIndex}" value="${option.animal}" ${optionIndex === 0 ? '' : ''}>${option.label}</label>
+                `).join('')}
+            </div>
+        </div>
+    `).join('');
+    selfQuiz.addEventListener('change', updateQuizResult);
+}
+
+function updateQuizResult() {
+    const selected = [...selfQuiz.querySelectorAll('input:checked')].map((input) => input.value);
+    if (!selected.length) return;
+    const counts = selected.reduce((map, id) => map.set(id, (map.get(id) || 0) + 1), new Map());
+    const [topSelfId] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
+    const selfAnimal = animalById[topSelfId];
+    const aiText = currentResult ? `AI가 본 당신은 ${currentResult.winner.name}, ` : '';
+    quizResult.textContent = `${aiText}내가 생각하는 나는 ${selfAnimal.name}에 가깝습니다. ${selfAnimal.summary}`;
+}
+
+function renderCompareResult() {
+    if (!currentResult || !comparePersonResult) return;
+    const a = currentResult.winner;
+    const b = comparePersonResult.winner;
+    const shared = currentResult.top.find((animal) => comparePersonResult.top.some((other) => other.id === animal.id));
+    const note = shared
+        ? `두 사람 모두 ${shared.name} 계열의 분위기가 일부 겹칩니다. A는 ${a.name}의 ${a.keywords[0]}이, B는 ${b.name}의 ${b.keywords[0]}이 더 크게 나타납니다.`
+        : `두 사람의 1위 동물상은 다르지만, A는 ${a.name} 특유의 ${a.keywords[0]}이 강하고 B는 ${b.name} 특유의 ${b.keywords[0]}이 강해 서로 다른 매력이 보입니다.`;
+    compareResult.innerHTML = `
+        <div class="compare-cards">
+            <div class="compare-person"><div class="emoji">${a.emoji}</div><strong>나: ${a.name}</strong><p>${a.percent}% · ${a.tagline}</p></div>
+            <div class="compare-person"><div class="emoji">${b.emoji}</div><strong>친구: ${b.name}</strong><p>${b.percent}% · ${b.tagline}</p></div>
+        </div>
+        <p class="compare-note">${note}</p>
+    `;
+}
+
+function saveResultCard() {
+    if (!currentResult) return;
+    const { winner } = currentResult;
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 1440;
+    const ctx = canvas.getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 1080, 1440);
+    gradient.addColorStop(0, '#fff9eb');
+    gradient.addColorStop(0.55, '#ffd0b6');
+    gradient.addColorStop(1, '#ffc857');
+    ctx.fillStyle = gradient;
+    roundRect(ctx, 0, 0, 1080, 1440, 0);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.46)';
+    roundRect(ctx, 72, 72, 936, 1296, 64);
+    ctx.fill();
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#2b1c17';
+    ctx.font = '72px sans-serif';
+    ctx.fillText('동물상 AI 얼굴 분석', 540, 180);
+    ctx.font = '180px sans-serif';
+    ctx.fillText(winner.emoji, 540, 405);
+    ctx.font = '86px sans-serif';
+    ctx.fillText(`나는 ${winner.name}`, 540, 570);
+    ctx.font = '56px sans-serif';
+    ctx.fillText(`일치도 ${winner.percent}%`, 540, 660);
+    drawWrappedText(ctx, winner.tagline, 540, 790, 760, 54);
+    ctx.font = '42px sans-serif';
+    drawWrappedText(ctx, winner.resultMessage, 540, 930, 780, 54);
+    ctx.font = '38px sans-serif';
+    ctx.fillText('animal-face.ai test', 540, 1260);
+
+    const link = document.createElement('a');
+    link.download = `animal-face-${winner.id}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+}
+
+async function copyResultLink() {
+    const text = currentResult ? `나는 ${currentResult.winner.name}! ${location.href}` : location.href;
+    try {
+        await navigator.clipboard.writeText(text);
+        showStatus('결과 링크를 복사했습니다.', false);
+    } catch (error) {
+        console.error(error);
+        showStatus('링크 복사에 실패했습니다. 주소창의 URL을 직접 복사해 주세요.', true);
+    }
+}
+
+async function shareResult() {
+    if (!currentResult) return;
+    const shareData = {
+        title: '동물상 AI 얼굴 분석',
+        text: `나는 ${currentResult.winner.name}! 일치도 ${currentResult.winner.percent}%가 나왔어요.`,
+        url: location.href,
+    };
+    if (navigator.share) {
+        try {
+            await navigator.share(shareData);
+            return;
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+            console.error(error);
+        }
+    }
+    await copyResultLink();
+}
+
+function showLoading() {
+    hideResult(false);
+    loadingPanel.hidden = false;
+    setLoadingProgress(0, loadingSteps[0]);
+    showStatus('분석 중입니다. 잠시만 기다려 주세요.', false);
+}
+
+function hideLoading() {
+    window.clearInterval(loadingTimer);
+    loadingPanel.hidden = true;
+}
+
+function runLoadingSequence() {
+    let step = 0;
+    let progress = 12;
+    setLoadingProgress(progress, loadingSteps[step]);
+    window.clearInterval(loadingTimer);
+    loadingTimer = window.setInterval(() => {
+        progress = Math.min(progress + 11, 92);
+        step = Math.min(Math.floor(progress / 25), loadingSteps.length - 1);
+        setLoadingProgress(progress, loadingSteps[step]);
+    }, 170);
+    return delay(760).then(() => setLoadingProgress(100, loadingSteps[3]));
+}
+
+function setLoadingProgress(value, text) {
+    loadingPanel.style.setProperty('--progress', `${value}%`);
+    loadingProgress.textContent = `${value}%`;
+    loadingStep.textContent = text;
+    progressBar.style.width = `${value}%`;
+}
+
+function hideResult(clear = true) {
+    if (clear) currentResult = null;
+    resultPanel.hidden = true;
+}
+
+function handleAnalyzeError(error) {
+    if (error.message === 'NO_FACE') {
+        showStatus('얼굴이 감지되지 않았습니다. 밝은 정면 사진으로 다시 시도해 주세요.', true);
+    } else if (error.message === 'MULTIPLE_FACES') {
+        showStatus('여러 명의 얼굴이 감지되었습니다. 한 명만 선명하게 나온 사진을 사용해 주세요.', true);
+    } else {
+        showStatus('분석 모델을 불러오거나 결과를 계산하지 못했습니다. 네트워크 상태를 확인한 뒤 다시 시도해 주세요.', true);
+    }
+}
+
+function showStatus(message, isError) {
+    statusMessage.textContent = message;
+    statusMessage.classList.toggle('is-error', isError);
+}
+
+function clearMainImage() {
+    capturedCanvas = null;
+    imageUpload.value = '';
+    imagePreview.removeAttribute('src');
+    previewPanel.hidden = true;
+    hideResult();
+    showStatus('이미지를 삭제했습니다. 새 사진을 선택해주세요.', false);
+}
+
+function resetTester() {
+    stopCamera();
+    capturedCanvas = null;
+    compareCanvas = null;
+    currentResult = null;
+    comparePersonResult = null;
+    imageUpload.value = '';
+    compareUpload.value = '';
+    imagePreview.removeAttribute('src');
+    compareImage.removeAttribute('src');
+    previewPanel.hidden = true;
+    comparePreview.hidden = true;
+    cameraPanel.hidden = true;
+    comparePanel.hidden = true;
+    compareResult.innerHTML = '';
+    hideLoading();
+    hideResult();
+    analyzeButton.disabled = false;
+    showStatus('분석한 이미지는 저장되지 않으며, 브라우저 내 분석에만 사용됩니다.', false);
+    document.getElementById('start-test').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function stopCamera() {
+    if (!cameraStream) return;
+    cameraStream.getTracks().forEach((track) => track.stop());
+    cameraStream = null;
+    cameraVideo.srcObject = null;
+}
+
+function waitForImageReady(source) {
+    if (source instanceof HTMLCanvasElement) return Promise.resolve();
+    if (source.complete && source.naturalWidth > 0) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+        source.onload = resolve;
+        source.onerror = reject;
+    });
 }
 
 function getBounds(landmarks) {
     const xs = landmarks.map((point) => point.x);
     const ys = landmarks.map((point) => point.y);
-    const minX = Math.min(...xs);
-    const maxX = Math.max(...xs);
-    const minY = Math.min(...ys);
-    const maxY = Math.max(...ys);
-
-    return { width: maxX - minX, height: maxY - minY };
+    return { width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys) };
 }
 
 function measureEye(landmarks, points) {
-    return {
-        width: distance(landmarks[points.outer], landmarks[points.inner]),
-        height: distance(landmarks[points.top], landmarks[points.bottom]),
-    };
+    return { width: distance(landmarks[points.outer], landmarks[points.inner]), height: distance(landmarks[points.top], landmarks[points.bottom]) };
 }
 
 function distance(a, b) {
@@ -509,66 +703,33 @@ function clamp01(value) {
     return Math.max(0, Math.min(1, value));
 }
 
-function waitForImageReady(source) {
-    if (source instanceof HTMLCanvasElement) {
-        return Promise.resolve();
-    }
-
-    if (source.complete && source.naturalWidth > 0) {
-        return Promise.resolve();
-    }
-
-    return new Promise((resolve, reject) => {
-        source.onload = resolve;
-        source.onerror = reject;
-    });
-}
-
-function showLoading() {
-    hideResult();
-    loadingPanel.hidden = false;
-    showStatus('분석 중입니다. 잠시만 기다려 주세요.', false);
-}
-
-function hideLoading() {
-    loadingPanel.hidden = true;
-}
-
-function hideResult() {
-    resultPanel.hidden = true;
-}
-
-function showStatus(message, isError) {
-    statusMessage.textContent = message;
-    statusMessage.classList.toggle('is-error', isError);
-}
-
-function resetTester() {
-    stopCamera();
-    capturedCanvas = null;
-    imageUpload.value = '';
-    imagePreview.removeAttribute('src');
-    previewPanel.hidden = true;
-    cameraPanel.hidden = true;
-    hideLoading();
-    hideResult();
-    analyzeButton.disabled = false;
-    showStatus('얼굴이 정면으로 잘 보이는 사진을 사용하면 결과가 더 자연스럽습니다.', false);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function stopCamera() {
-    if (!cameraStream) {
-        return;
-    }
-
-    cameraStream.getTracks().forEach((track) => track.stop());
-    cameraStream = null;
-    cameraVideo.srcObject = null;
-}
-
 function delay(ms) {
-    return new Promise((resolve) => {
-        window.setTimeout(resolve, ms);
+    return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function roundRect(ctx, x, y, width, height, radius) {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.arcTo(x + width, y, x + width, y + height, radius);
+    ctx.arcTo(x + width, y + height, x, y + height, radius);
+    ctx.arcTo(x, y + height, x, y, radius);
+    ctx.arcTo(x, y, x + width, y, radius);
+    ctx.closePath();
+}
+
+function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight) {
+    const words = text.split(' ');
+    let line = '';
+    let currentY = y;
+    words.forEach((word) => {
+        const testLine = `${line}${word} `;
+        if (ctx.measureText(testLine).width > maxWidth && line) {
+            ctx.fillText(line.trim(), x, currentY);
+            line = `${word} `;
+            currentY += lineHeight;
+        } else {
+            line = testLine;
+        }
     });
+    if (line) ctx.fillText(line.trim(), x, currentY);
 }

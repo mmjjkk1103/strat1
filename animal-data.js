@@ -269,3 +269,33 @@ export const quizQuestions = [
         ],
     },
 ];
+
+const archetypeEnhancements = {
+    dog: ['안심시키는 얼굴', '둥글고 완만한 윤곽', '부드럽게 열린 눈매', '자연스러운 미소', '사람을 안심시키는 따뜻한 기운', ['care', 'trust', 'warmth'], ['soft', 'open']],
+    cat: ['고요한 관찰자', '정돈된 얼굴선', '길고 선명한 눈매', '절제된 입매', '거리감 속에 매력이 생기는 기운', ['observe', 'refine', 'boundary'], ['sharp', 'cool']],
+    rabbit: ['맑은 섬세함', '작고 부드러운 윤곽', '둥근 눈망울', '작고 조심스러운 입매', '보호본능을 부르는 여린 기운', ['sensitive', 'pure', 'careful'], ['soft', 'delicate']],
+    fox: ['감각적인 판단자', '날렵한 윤곽', '올라간 눈꼬리', '선명한 입매', '빠른 판단과 매혹의 기운', ['sense', 'wit', 'magnetism'], ['sharp', 'active']],
+    deer: ['감정을 머금은 상', '유연하고 긴 얼굴선', '깊고 맑은 눈망울', '차분한 입매', '조용한 품위와 직감의 기운', ['intuition', 'grace', 'calm'], ['soft', 'deep']],
+    bear: ['큰 그릇의 상', '넓고 안정적인 얼굴선', '묵직하고 편안한 눈매', '여유 있는 입매', '급하게 흔들리지 않는 안정의 기운', ['stable', 'protect', 'ground'], ['warm', 'steady']],
+    wolf: ['고독한 집중력', '분명한 하관', '강한 눈빛', '절제된 입매', '혼자 있을 때 더 강해지는 기운', ['focus', 'independent', 'guard'], ['sharp', 'deep']],
+    monkey: ['살아 움직이는 표정', '표정 변화가 큰 윤곽', '반응이 빠른 눈매', '표현감 있는 입매', '분위기를 빠르게 바꾸는 생기의 기운', ['wit', 'motion', 'play'], ['active', 'open']],
+    horse: ['긴 호흡의 품위', '길고 정제된 비율', '시원한 눈매', '단정한 입매', '시간이 지날수록 품위가 드러나는 기운', ['elegance', 'pace', 'maturity'], ['calm', 'long']],
+    dinosaur: ['기억되는 존재감', '뚜렷한 골격', '압이 있는 눈빛', '강한 입매', '단숨에 기억되는 구조적 기운', ['presence', 'power', 'unique'], ['strong', 'sharp']],
+    camel: ['오래 남는 여운', '긴 중안부와 흐르는 선', '나른하고 깊은 눈매', '묵직한 입매', '쉽게 소비되지 않는 깊은 기운', ['depth', 'slow', 'rare'], ['deep', 'long']],
+    quokka: ['경계를 낮추는 미소', '완만하고 열린 윤곽', '편안한 눈매', '올라간 입꼬리', '사람의 경계를 낮추는 밝은 기운', ['bright', 'open', 'comfort'], ['soft', 'warm']],
+};
+
+animalProfiles.forEach((animal) => {
+    const [archetypeTitle, faceShape, eyeShape, mouthShape, physiognomyEnergy, adviceTags, affinityTags] = archetypeEnhancements[animal.id];
+    Object.assign(animal, {
+        archetypeTitle,
+        faceShape,
+        eyeShape,
+        mouthShape,
+        overallImpression: animal.guide,
+        closerCharm: animal.smileCharm,
+        physiognomyEnergy,
+        adviceTags,
+        affinityTags,
+    });
+});

@@ -3,14 +3,22 @@ import {
     FilesetResolver,
 } from 'https://unpkg.com/@mediapipe/tasks-vision@0.10.35/vision_bundle.mjs';
 import { animalProfiles, featureLabels, quizQuestions } from './animal-data.js';
+import {
+    branchAnimals,
+    dailyFortuneTemplates,
+    elementProfiles,
+    guardianTitles,
+    weeklySentences,
+} from './reading-data.js';
 
 const animalById = Object.fromEntries(animalProfiles.map((animal) => [animal.id, animal]));
 const validImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
 const loadingSteps = [
-    '얼굴 윤곽을 살펴보고 있어요...',
-    '눈매와 입꼬리의 분위기를 분석 중입니다...',
-    '12가지 동물상과 비교하고 있어요...',
-    '당신만의 동물상 결과를 정리하는 중입니다...',
+    '얼굴의 윤곽을 살펴보고 있습니다...',
+    '눈과 입에 머문 인상을 읽고 있습니다...',
+    '생년월일의 흐름을 조합하고 있습니다...',
+    '오늘의 기운과 당신의 상을 맞춰보고 있습니다...',
+    '해석을 완성했습니다.',
 ];
 
 const themeButtons = document.querySelectorAll('.theme-toggle');
@@ -24,9 +32,16 @@ const capturePhotoButton = document.getElementById('capture-photo');
 const retakePhotoButton = document.getElementById('retake-photo');
 const previewPanel = document.getElementById('preview-panel');
 const imagePreview = document.getElementById('image-preview');
+const analysisOverlay = document.getElementById('analysis-overlay');
+const analysisBadge = document.getElementById('analysis-badge');
 const removeImageButton = document.getElementById('remove-image');
 const analyzeButton = document.getElementById('analyze-button');
 const statusMessage = document.getElementById('status-message');
+const readerNameInput = document.getElementById('reader-name');
+const birthDateInput = document.getElementById('birth-date');
+const calendarTypeInput = document.getElementById('calendar-type');
+const birthTimeInput = document.getElementById('birth-time');
+const readerGenderInput = document.getElementById('reader-gender');
 const loadingPanel = document.getElementById('loading-panel');
 const loadingStep = document.getElementById('loading-step');
 const loadingProgress = document.getElementById('loading-progress');
@@ -39,6 +54,12 @@ const topThree = document.getElementById('top-three');
 const comboSummary = document.getElementById('combo-summary');
 const scoreList = document.getElementById('score-list');
 const resultDetail = document.getElementById('result-detail');
+const partReading = document.getElementById('part-reading');
+const sajuReading = document.getElementById('saju-reading');
+const integrationReading = document.getElementById('integration-reading');
+const dailyFortune = document.getElementById('daily-fortune');
+const weeklyFortune = document.getElementById('weekly-fortune');
+const talismanCard = document.getElementById('talisman-card');
 const compatibilityList = document.getElementById('compatibility-list');
 const selfQuiz = document.getElementById('self-quiz');
 const quizResult = document.getElementById('quiz-result');
@@ -47,10 +68,13 @@ const copyLinkButton = document.getElementById('copy-link');
 const shareResultButton = document.getElementById('share-result');
 const compareToggle = document.getElementById('compare-toggle');
 const comparePanel = document.getElementById('compare-panel');
+const compareModeInput = document.getElementById('compare-mode');
 const compareUpload = document.getElementById('compare-upload');
 const compareCameraButton = document.getElementById('compare-camera');
 const comparePreview = document.getElementById('compare-preview');
 const compareImage = document.getElementById('compare-image');
+const compareOverlay = document.getElementById('compare-overlay');
+const compareBadge = document.getElementById('compare-badge');
 const analyzeCompareButton = document.getElementById('analyze-compare');
 const compareResult = document.getElementById('compare-result');
 const resetButton = document.getElementById('reset-button');
@@ -148,6 +172,7 @@ function handleImageFile(file, target) {
 
     if (target === 'compare') {
         compareCanvas = null;
+        clearAnalysisOverlay('compare');
         compareImage.onload = () => URL.revokeObjectURL(imageURL);
         compareImage.src = imageURL;
         comparePreview.hidden = false;
@@ -159,6 +184,7 @@ function handleImageFile(file, target) {
     hideResult();
     hideLoading();
     capturedCanvas = null;
+    clearAnalysisOverlay('main');
     imagePreview.onload = () => URL.revokeObjectURL(imageURL);
     imagePreview.src = imageURL;
     previewPanel.hidden = false;
@@ -170,6 +196,7 @@ async function startCamera(target = 'main') {
     captureTarget = target;
     hideLoading();
     if (target === 'main') hideResult();
+    clearAnalysisOverlay(target);
     cameraPanel.hidden = false;
     previewPanel.hidden = target === 'main';
     retakePhotoButton.hidden = true;
@@ -183,7 +210,7 @@ async function startCamera(target = 'main') {
             audio: false,
         });
         cameraVideo.srcObject = cameraStream;
-        showStatus(target === 'compare' ? '친구 얼굴이 프레임 안에 들어오면 촬영해주세요.' : '얼굴이 프레임 안에 들어오면 촬영하기를 눌러주세요.', false);
+        showStatus(target === 'compare' ? '친구 얼굴이 프레임 중앙에 들어오면 촬영해주세요.' : '얼굴이 프레임 중앙에 들어오면 촬영하기를 눌러주세요.', false);
     } catch (error) {
         console.error(error);
         cameraPanel.hidden = true;
@@ -210,6 +237,7 @@ function capturePhoto() {
 
     if (captureTarget === 'compare') {
         compareCanvas = canvas;
+        clearAnalysisOverlay('compare');
         compareImage.src = canvas.toDataURL('image/png');
         comparePreview.hidden = false;
         showStatus('친구 사진이 준비되었습니다. 친구 결과 분석을 눌러주세요.', false);
@@ -219,6 +247,7 @@ function capturePhoto() {
     }
 
     capturedCanvas = canvas;
+    clearAnalysisOverlay('main');
     imagePreview.src = canvas.toDataURL('image/png');
     previewPanel.hidden = false;
     showStatus('촬영한 사진이 준비되었습니다. AI 분석 시작을 눌러주세요.', false);
@@ -228,9 +257,16 @@ async function analyzeCurrentImage(target) {
     const isCompare = target === 'compare';
     const source = isCompare ? (compareCanvas || compareImage) : (capturedCanvas || imagePreview);
     const button = isCompare ? analyzeCompareButton : analyzeButton;
+    const userProfile = getUserProfile();
 
     if (!source || (!isCompare && !capturedCanvas && !imagePreview.src) || (isCompare && !compareCanvas && !compareImage.src)) {
         showStatus(isCompare ? '비교할 친구 사진을 먼저 준비해주세요.' : '분석할 사진을 먼저 준비해주세요.', true);
+        return;
+    }
+
+    if (!isCompare && !userProfile.birthDate) {
+        showStatus('생년월일을 입력하면 관상과 생년 흐름을 함께 읽을 수 있습니다.', true);
+        birthDateInput.focus();
         return;
     }
 
@@ -249,7 +285,24 @@ async function analyzeCurrentImage(target) {
 
         const features = extractFaceFeatures(result.faceLandmarks[0]);
         const scores = calculateAnimalScores(features);
-        const analysis = { scores, features, winner: scores[0], top: scores.slice(0, 3) };
+        const partAnimals = calculatePartAnimals(features);
+        const saju = createSajuReading(userProfile);
+        const daily = createDailyFortune(scores[0], saju, userProfile);
+        const weekly = createWeeklyFortune(scores[0], saju, userProfile);
+        const symbol = createSymbolicAnimalName(scores[0], saju, userProfile);
+        const analysis = {
+            scores,
+            features,
+            partAnimals,
+            saju,
+            daily,
+            weekly,
+            symbol,
+            userProfile,
+            winner: scores[0],
+            top: scores.slice(0, 3),
+        };
+        drawAnalysisOverlay(isCompare ? 'compare' : 'main', result.faceLandmarks[0], source);
 
         if (isCompare) {
             comparePersonResult = analysis;
@@ -359,14 +412,14 @@ function normalizeRoundedPercents(scores) {
     return scores;
 }
 
-function renderResult({ scores, features, winner, top }) {
+function renderResult({ scores, features, winner, top, partAnimals, saju, daily, weekly, symbol, userProfile }) {
     winnerCard.innerHTML = `
         <div class="winner-main">
             <div class="winner-emoji">${winner.emoji}</div>
-            <p class="winner-label">최종 동물상</p>
+            <p class="winner-label">당신의 대표 동물상</p>
             <h2>당신은 ${winner.name}입니다</h2>
             <p class="winner-percent">가장 높은 일치도 ${winner.percent}%</p>
-            <p class="winner-message">${winner.tagline}. ${winner.resultMessage}</p>
+            <p class="winner-message">${symbol.title}. ${winner.tagline}. ${winner.resultMessage}</p>
             <div class="keyword-row">${winner.keywords.map((keyword) => `<span>${keyword}</span>`).join('')}</div>
         </div>
     `;
@@ -391,12 +444,13 @@ function renderResult({ scores, features, winner, top }) {
         </div>
     `).join('');
 
-    resultDetail.innerHTML = [
-        `<p><strong>첫인상</strong><br>${winner.firstImpression}</p>`,
-        `<p><strong>웃을 때 드러나는 매력</strong><br>${winner.smileCharm}</p>`,
-        `<p><strong>사람들이 느끼는 분위기</strong><br>${winner.mood}</p>`,
-        `<p><strong>비슷하지만 다른 유형</strong><br>${winner.difference}</p>`,
-    ].join('');
+    partReading.innerHTML = renderPartAnimals(partAnimals);
+    resultDetail.innerHTML = renderPhysiognomyReport(winner, partAnimals);
+    sajuReading.innerHTML = renderSajuReport(saju);
+    integrationReading.innerHTML = renderIntegrationReport(winner, partAnimals, saju);
+    dailyFortune.innerHTML = renderDailyFortune(daily);
+    weeklyFortune.innerHTML = renderWeeklyFortune(weekly);
+    talismanCard.innerHTML = renderTalismanCard(symbol, winner, daily, userProfile);
 
     compatibilityList.innerHTML = `
         ${winner.compat.map((id) => {
@@ -406,7 +460,7 @@ function renderResult({ scores, features, winner, top }) {
         <p class="combo-summary">${winner.compatText}</p>
     `;
 
-    quizResult.textContent = '질문을 선택하면 AI 결과와 내가 생각하는 분위기를 함께 비교해드립니다.';
+    quizResult.textContent = '질문을 선택하면 AI가 읽은 상과 내가 생각하는 분위기를 함께 비교해드립니다.';
     resultPanel.hidden = false;
     resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     requestAnimationFrame(() => {
@@ -445,12 +499,220 @@ function buildComboSummary(top) {
     return `${first.name} + ${second.name} + ${third.name} 조합은 한 가지 분위기에 치우치기보다 친근함, 선명함, 개성이 균형 있게 섞인 타입입니다.`;
 }
 
+function getUserProfile() {
+    const birthDate = birthDateInput.value ? new Date(`${birthDateInput.value}T12:00:00`) : null;
+    return {
+        name: readerNameInput.value.trim() || '당신',
+        birthDate: Number.isNaN(birthDate?.getTime()) ? null : birthDate,
+        calendarType: calendarTypeInput.value,
+        birthTime: birthTimeInput.value,
+        gender: readerGenderInput.value,
+    };
+}
+
+function calculatePartAnimals(features) {
+    return {
+        eyes: bestAnimalForWeights(features, ['bigEyes', 'eyeRoundness', 'eyeSlenderness', 'eyeTailUp', 'eyeSoftness', 'wideEyeGap', 'browIntensity']),
+        mouth: bestAnimalForWeights(features, ['smallMouth', 'expressiveMouth', 'smileCurve', 'mouthCornerUp']),
+        outline: bestAnimalForWeights(features, ['roundFace', 'longFace', 'wideFace', 'sharpJaw', 'softJaw', 'cheekDefinition', 'longMidface']),
+        energy: bestAnimalForWeights(features, ['eyeSoftness', 'smileCurve', 'browIntensity', 'broadFeatures', 'compactFeatures']),
+    };
+}
+
+function bestAnimalForWeights(features, allowedFeatures) {
+    return animalProfiles
+        .map((animal) => {
+            const score = Object.entries(animal.weights)
+                .filter(([feature]) => allowedFeatures.includes(feature))
+                .reduce((sum, [feature, weight]) => sum + (features[feature] ?? 0.5) * Math.max(weight, 0), 0);
+            return { ...animal, partScore: score };
+        })
+        .sort((a, b) => b.partScore - a.partScore)[0];
+}
+
+function createSajuReading(profile) {
+    if (!profile.birthDate) {
+        return {
+            element: elementProfiles.water,
+            branch: '미상',
+            daySeed: 0,
+            calendarNote: '생년월일이 없어 기본 리듬으로만 해석했습니다.',
+        };
+    }
+
+    const year = profile.birthDate.getFullYear();
+    const month = profile.birthDate.getMonth() + 1;
+    const day = profile.birthDate.getDate();
+    const seed = year * 372 + month * 31 + day + (profile.birthTime === 'unknown' ? 0 : profile.birthTime.charCodeAt(0));
+    const elementKeys = ['wood', 'fire', 'earth', 'metal', 'water'];
+    const element = elementProfiles[elementKeys[Math.abs(seed) % elementKeys.length]];
+    const branch = branchAnimals[(year - 4) % 12];
+
+    return {
+        element,
+        branch,
+        daySeed: seed,
+        calendarNote: `${profile.calendarType === 'lunar' ? '음력' : '양력'} 기준의 생년 흐름을 룰 기반으로 해석했습니다.`,
+    };
+}
+
+function createDailyFortune(winner, saju, profile) {
+    const seed = getDateSeed(new Date()) + saju.daySeed + winner.id.length;
+    const guardian = animalProfiles[seed % animalProfiles.length];
+    const keyword = saju.element.keywords[seed % saju.element.keywords.length];
+    return {
+        title: `${guardian.name}이 지키는 ${keyword}의 날`,
+        flow: pick(dailyFortuneTemplates.flow, seed),
+        relation: pick(dailyFortuneTemplates.relation, seed + 1),
+        focus: pick(dailyFortuneTemplates.focus, seed + 2),
+        emotion: pick(dailyFortuneTemplates.emotion, seed + 3),
+        money: pick(dailyFortuneTemplates.money, seed + 4),
+        caution: `${winner.name}의 ${winner.keywords[0]}이 장점이 되는 날이지만, 반응을 너무 빨리 내면 결이 거칠어질 수 있습니다.`,
+        action: `${profile.name}님에게 오늘 필요한 행동은 작은 약속 하나를 정확히 지키는 것입니다.`,
+        keyword,
+        color: pick(['연한 금빛', '짙은 남색', '안개 보라', '크림 화이트', '차분한 녹색'], seed),
+        guardian,
+        meditation: '좋은 인상은 더하려 할 때보다, 불필요한 긴장을 덜어낼 때 드러납니다.',
+    };
+}
+
+function createWeeklyFortune(winner, saju, profile) {
+    const seed = getDateSeed(getWeekStart(new Date())) + saju.daySeed;
+    const guardian = animalProfiles[(seed + 3) % animalProfiles.length];
+    return {
+        keyword: `${saju.element.keywords[(seed + 1) % saju.element.keywords.length]}과 ${winner.keywords[1]}`,
+        relation: '관계에서는 속도를 맞추는 일이 중요합니다. 먼저 설득하기보다 서로의 기준을 확인해보세요.',
+        work: `${saju.element.work} 이번 주에는 ${winner.name} 특유의 ${winner.keywords[0]}을 결과물의 첫인상으로 쓰면 좋습니다.`,
+        emotion: '감정의 흐름은 완만하지만 오래 갑니다. 사소한 피로를 무시하지 않는 것이 이번 주의 균형입니다.',
+        choice: '중요한 선택 앞에서는 빠른 확신보다 반복해서 남는 신호를 믿어보세요.',
+        avoid: '모두에게 좋은 인상을 남기려는 과한 조율은 피하는 편이 좋습니다.',
+        guardian,
+        sentence: pick(weeklySentences, seed),
+        name: profile.name,
+    };
+}
+
+function createSymbolicAnimalName(winner, saju, profile) {
+    const seed = saju.daySeed + winner.name.length + profile.name.length;
+    const prefix = guardianTitles[Math.abs(seed) % guardianTitles.length];
+    return {
+        title: `${prefix} ${winner.name.replace('상', '')}`,
+        description: `${winner.tagline}과 ${saju.element.tone}이 겹쳐, 사람들에게는 ${winner.keywords[0]}이 먼저 닿고 안쪽에는 ${saju.element.keywords[0]}의 리듬이 남습니다.`,
+    };
+}
+
+function renderPartAnimals(parts) {
+    const copy = {
+        eyes: '눈매에는',
+        mouth: '입꼬리와 웃는 인상에는',
+        outline: '얼굴선에는',
+        energy: '전체 기운에는',
+    };
+    return Object.entries(parts)
+        .map(([key, animal]) => `<div class="part-item"><strong>${partLabel(key)}: ${animal.emoji} ${animal.name}</strong><p>${copy[key]} ${animal.name} 특유의 ${animal.keywords.slice(0, 2).join('과 ')}이 강하게 나타납니다.</p></div>`)
+        .join('');
+}
+
+function renderPhysiognomyReport(winner, parts) {
+    return [
+        `<p><strong>전체 인상 총평</strong><br>당신의 얼굴은 ${winner.resultMessage} 예언처럼 단정하기보다, 현재 사진에서 읽히는 인상상의 흐름으로 보는 것이 좋습니다.</p>`,
+        `<p><strong>눈의 상</strong><br>눈에서는 ${parts.eyes.name} 계열의 ${parts.eyes.keywords[0]}이 먼저 읽힙니다. 시선의 결이 첫인상을 오래 남깁니다.</p>`,
+        `<p><strong>입의 상</strong><br>입매는 ${parts.mouth.name}의 ${parts.mouth.keywords[0]}을 띱니다. 웃는 순간 인상의 문이 열리는 타입입니다.</p>`,
+        `<p><strong>윤곽의 상</strong><br>윤곽은 ${parts.outline.name}처럼 ${parts.outline.keywords[1]}을 만들며, 가까워졌을 때 ${winner.smileCharm}</p>`,
+        `<p><strong>주의하면 좋은 습관</strong><br>좋은 인상을 더하려 하기보다 얼굴과 몸의 긴장을 덜어내면 본래의 ${winner.keywords[0]}이 더 자연스럽게 드러납니다.</p>`,
+    ].join('');
+}
+
+function renderSajuReport(saju) {
+    const element = saju.element;
+    return [
+        `<p><strong>기본 기질: ${element.name}</strong><br>${element.temperament}</p>`,
+        `<p><strong>관계의 경향</strong><br>${element.relationship}</p>`,
+        `<p><strong>일/학업/창작 태도</strong><br>${element.work}</p>`,
+        `<p><strong>돈과 소비의 기질</strong><br>${element.money}</p>`,
+        `<p><strong>휴식이 필요한 순간</strong><br>${element.rest}</p>`,
+        `<p><strong>지금 자주 마주하는 과제</strong><br>${element.challenge}</p>`,
+        `<p><strong>해석 기준</strong><br>${saju.calendarNote} 띠 흐름은 ${saju.branch}의 상징을 참고했습니다.</p>`,
+    ].join('');
+}
+
+function renderIntegrationReport(winner, parts, saju) {
+    return [
+        `<p><strong>얼굴이 먼저 말하는 것</strong><br>얼굴에서는 ${winner.name}과 ${parts.energy.name} 계열의 ${winner.keywords[0]}이 강하게 나타납니다.</p>`,
+        `<p><strong>생년 정보가 말하는 것</strong><br>생년 흐름은 ${saju.element.name}의 ${saju.element.tone}을 보여줍니다. 이는 ${saju.element.keywords.join(', ')} 같은 방향으로 해석됩니다.</p>`,
+        `<p><strong>겹치는 지점</strong><br>${winner.name}의 ${winner.keywords[1]}과 ${saju.element.name}의 ${saju.element.keywords[0]}이 만나, 사람들에게는 비교적 일관된 인상으로 남기 쉽습니다.</p>`,
+        `<p><strong>어긋나는 지점</strong><br>겉으로는 ${winner.firstImpression}처럼 보이지만, 안쪽에서는 ${saju.element.rest}</p>`,
+        `<p><strong>균형의 방향</strong><br>타인에게 보이는 나를 과하게 관리하기보다, 혼자 있을 때 회복되는 방식을 존중할 때 상과 기질이 같은 방향으로 움직입니다.</p>`,
+    ].join('');
+}
+
+function renderDailyFortune(daily) {
+    return [
+        ['오늘의 전체 흐름', daily.flow],
+        ['관계운', daily.relation],
+        ['일/학업운', daily.focus],
+        ['감정운', daily.emotion],
+        ['소비운', daily.money],
+        ['조심 포인트', daily.caution],
+        ['추천 행동', daily.action],
+        ['행운 키워드', daily.keyword],
+        ['행운 색상', daily.color],
+        ['오늘의 수호 동물', `${daily.guardian.emoji} ${daily.guardian.name}`],
+        ['오늘의 마음 수행', daily.meditation],
+    ].map(([label, value]) => `<div class="fortune-item"><strong>${label}</strong><p>${value}</p></div>`).join('');
+}
+
+function renderWeeklyFortune(weekly) {
+    return [
+        `<p><strong>이번 주 핵심 키워드</strong><br>${weekly.keyword}</p>`,
+        `<p><strong>관계 흐름</strong><br>${weekly.relation}</p>`,
+        `<p><strong>일/학업 흐름</strong><br>${weekly.work}</p>`,
+        `<p><strong>감정 흐름</strong><br>${weekly.emotion}</p>`,
+        `<p><strong>선택의 태도</strong><br>${weekly.choice}</p>`,
+        `<p><strong>피하면 좋은 습관</strong><br>${weekly.avoid}</p>`,
+        `<p><strong>이번 주 상징 동물</strong><br>${weekly.guardian.emoji} ${weekly.guardian.name}</p>`,
+        `<p><strong>이번 주 문장</strong><br>${weekly.sentence}</p>`,
+    ].join('');
+}
+
+function renderTalismanCard(symbol, winner, daily, profile) {
+    return `
+        <div class="talisman-inner">
+            <span>${winner.emoji}</span>
+            <p>오늘의 상징 카드</p>
+            <h4>${symbol.title}</h4>
+            <strong>${profile.name} · ${daily.title}</strong>
+            <small>${symbol.description}</small>
+            <em>${daily.meditation}</em>
+        </div>
+    `;
+}
+
+function partLabel(key) {
+    return { eyes: '눈의 상', mouth: '입의 상', outline: '윤곽의 상', energy: '전체 기운' }[key];
+}
+
+function pick(items, seed) {
+    return items[Math.abs(seed) % items.length];
+}
+
+function getDateSeed(date) {
+    return date.getFullYear() * 372 + (date.getMonth() + 1) * 31 + date.getDate();
+}
+
+function getWeekStart(date) {
+    const start = new Date(date);
+    start.setDate(date.getDate() - date.getDay());
+    start.setHours(12, 0, 0, 0);
+    return start;
+}
+
 function renderAnimalGuide() {
     animalGuideGrid.innerHTML = animalProfiles.map((animal) => `
         <button class="animal-guide-card" type="button" data-animal-id="${animal.id}" aria-label="${animal.name} 도감 열기">
             <div class="emoji">${animal.emoji}</div>
             <h3>${animal.name}</h3>
-            <p>${animal.guide}</p>
+            <p><strong>${animal.archetypeTitle}</strong><br>${animal.guide}</p>
         </button>
     `).join('');
     animalGuideGrid.querySelectorAll('button').forEach((button) => {
@@ -466,6 +728,7 @@ function openGuideModal(id) {
         <p>${animal.summary}</p>
         <ul>${animal.keywords.map((keyword) => `<li>${keyword}</li>`).join('')}</ul>
         <p><strong>이런 분위기의 얼굴</strong><br>${animal.guide}</p>
+        <p><strong>관상적으로 읽히는 기운</strong><br>${animal.physiognomyEnergy}</p>
         <p><strong>웃을 때 매력</strong><br>${animal.smileCharm}</p>
         <p><strong>비슷하지만 다른 유형</strong><br>${animal.difference}</p>
     `;
@@ -504,10 +767,17 @@ function renderCompareResult() {
     if (!currentResult || !comparePersonResult) return;
     const a = currentResult.winner;
     const b = comparePersonResult.winner;
+    const mode = compareModeInput.value;
     const shared = currentResult.top.find((animal) => comparePersonResult.top.some((other) => other.id === animal.id));
+    const modeText = {
+        friend: '친구 사이에서는 서로의 텐션과 회복 속도를 존중하는 것이 좋습니다.',
+        lover: '연인 사이에서는 끌림만큼 속도 조율이 중요합니다.',
+        family: '가족 사이에서는 익숙함 때문에 생략한 말을 다시 부드럽게 꺼내는 것이 좋습니다.',
+        colleague: '동료 사이에서는 역할과 기준을 분명히 할수록 좋은 조합이 됩니다.',
+    }[mode];
     const note = shared
-        ? `두 사람 모두 ${shared.name} 계열의 분위기가 일부 겹칩니다. A는 ${a.name}의 ${a.keywords[0]}이, B는 ${b.name}의 ${b.keywords[0]}이 더 크게 나타납니다.`
-        : `두 사람의 1위 동물상은 다르지만, A는 ${a.name} 특유의 ${a.keywords[0]}이 강하고 B는 ${b.name} 특유의 ${b.keywords[0]}이 강해 서로 다른 매력이 보입니다.`;
+        ? `두 사람 모두 ${shared.name} 계열의 분위기가 일부 겹칩니다. 한 사람은 ${a.name}의 ${a.keywords[0]}이, 다른 사람은 ${b.name}의 ${b.keywords[0]}이 더 크게 나타납니다. ${modeText}`
+        : `두 사람의 1위 동물상은 다르지만, 한 사람은 ${a.name} 특유의 ${a.keywords[0]}이 강하고 다른 사람은 ${b.name} 특유의 ${b.keywords[0]}이 강해 서로 다른 매력이 보입니다. ${modeText}`;
     compareResult.innerHTML = `
         <div class="compare-cards">
             <div class="compare-person"><div class="emoji">${a.emoji}</div><strong>나: ${a.name}</strong><p>${a.percent}% · ${a.tagline}</p></div>
@@ -519,7 +789,7 @@ function renderCompareResult() {
 
 function saveResultCard() {
     if (!currentResult) return;
-    const { winner } = currentResult;
+    const { winner, symbol, daily, userProfile } = currentResult;
     const canvas = document.createElement('canvas');
     canvas.width = 1080;
     canvas.height = 1440;
@@ -537,18 +807,19 @@ function saveResultCard() {
     ctx.textAlign = 'center';
     ctx.fillStyle = '#2b1c17';
     ctx.font = '72px sans-serif';
-    ctx.fillText('동물상 AI 얼굴 분석', 540, 180);
+    ctx.fillText('상의 서재', 540, 180);
     ctx.font = '180px sans-serif';
     ctx.fillText(winner.emoji, 540, 405);
     ctx.font = '86px sans-serif';
-    ctx.fillText(`나는 ${winner.name}`, 540, 570);
+    ctx.fillText(symbol.title, 540, 570);
     ctx.font = '56px sans-serif';
-    ctx.fillText(`일치도 ${winner.percent}%`, 540, 660);
-    drawWrappedText(ctx, winner.tagline, 540, 790, 760, 54);
+    ctx.fillText(`${userProfile.name} · ${winner.name} ${winner.percent}%`, 540, 660);
+    drawWrappedText(ctx, daily.title, 540, 790, 760, 54);
     ctx.font = '42px sans-serif';
-    drawWrappedText(ctx, winner.resultMessage, 540, 930, 780, 54);
+    drawWrappedText(ctx, symbol.description, 540, 930, 780, 54);
     ctx.font = '38px sans-serif';
-    ctx.fillText('animal-face.ai test', 540, 1260);
+    drawWrappedText(ctx, daily.meditation, 540, 1160, 760, 48);
+    ctx.fillText('AI physiognomy reading', 540, 1300);
 
     const link = document.createElement('a');
     link.download = `animal-face-${winner.id}.png`;
@@ -608,7 +879,7 @@ function runLoadingSequence() {
         step = Math.min(Math.floor(progress / 25), loadingSteps.length - 1);
         setLoadingProgress(progress, loadingSteps[step]);
     }, 170);
-    return delay(760).then(() => setLoadingProgress(100, loadingSteps[3]));
+    return delay(760).then(() => setLoadingProgress(100, loadingSteps[4]));
 }
 
 function setLoadingProgress(value, text) {
@@ -638,10 +909,70 @@ function showStatus(message, isError) {
     statusMessage.classList.toggle('is-error', isError);
 }
 
+function drawAnalysisOverlay(target, landmarks, source) {
+    const canvas = target === 'compare' ? compareOverlay : analysisOverlay;
+    const badge = target === 'compare' ? compareBadge : analysisBadge;
+    const media = target === 'compare' ? compareImage : imagePreview;
+
+    if (!canvas || !landmarks || !media) return;
+
+    const rect = media.getBoundingClientRect();
+    const sourceWidth = source instanceof HTMLCanvasElement ? source.width : source.naturalWidth;
+    const sourceHeight = source instanceof HTMLCanvasElement ? source.height : source.naturalHeight;
+    const displayRatio = Math.min(rect.width / sourceWidth, rect.height / sourceHeight);
+    const drawWidth = sourceWidth * displayRatio;
+    const drawHeight = sourceHeight * displayRatio;
+    const offsetX = (rect.width - drawWidth) / 2;
+    const offsetY = (rect.height - drawHeight) / 2;
+
+    canvas.width = Math.max(1, Math.round(rect.width));
+    canvas.height = Math.max(1, Math.round(rect.height));
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const points = landmarks.map((point) => ({
+        x: offsetX + point.x * drawWidth,
+        y: offsetY + point.y * drawHeight,
+    }));
+    const xs = points.map((point) => point.x);
+    const ys = points.map((point) => point.y);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+
+    ctx.strokeStyle = 'rgba(255, 216, 128, 0.9)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([7, 7]);
+    roundRect(ctx, minX - 10, minY - 14, maxX - minX + 20, maxY - minY + 28, 26);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.82)';
+    [33, 133, 263, 362, 61, 291, 10, 152, 234, 454].forEach((index) => {
+        const point = points[index];
+        if (!point) return;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 2.6, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    badge.hidden = false;
+}
+
+function clearAnalysisOverlay(target = 'main') {
+    const canvas = target === 'compare' ? compareOverlay : analysisOverlay;
+    const badge = target === 'compare' ? compareBadge : analysisBadge;
+    if (!canvas) return;
+    canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
+    if (badge) badge.hidden = true;
+}
+
 function clearMainImage() {
     capturedCanvas = null;
     imageUpload.value = '';
     imagePreview.removeAttribute('src');
+    clearAnalysisOverlay('main');
     previewPanel.hidden = true;
     hideResult();
     showStatus('이미지를 삭제했습니다. 새 사진을 선택해주세요.', false);
@@ -657,6 +988,8 @@ function resetTester() {
     compareUpload.value = '';
     imagePreview.removeAttribute('src');
     compareImage.removeAttribute('src');
+    clearAnalysisOverlay('main');
+    clearAnalysisOverlay('compare');
     previewPanel.hidden = true;
     comparePreview.hidden = true;
     cameraPanel.hidden = true;

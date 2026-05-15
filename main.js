@@ -2,7 +2,7 @@ import { animalProfiles, featureLabels, quizQuestions } from './animal-data.js';
 import { detectFaceLandmarks } from './faceLandmark.js';
 import { extractFaceFeatures as extractLandmarkFeatures } from './faceFeatureExtraction.js';
 import { calculateAnimalScores as scoreAnimalTypes, calculatePartAnimals as scorePartAnimals } from './animalTypeScoring.js';
-import { renderPartAnimals as renderPartAnimalReport, renderPhysiognomyReport as renderFaceReadingReport } from './physiognomyInterpretation.js';
+import { renderAnimalTypeReport, renderPartAnimals as renderPartAnimalReport, renderPhysiognomyReport as renderFaceReadingReport } from './physiognomyInterpretation.js';
 import { createSajuProfile } from './sajuCalculation.js';
 import { createSymbolicAnimalName as createSajuSymbol, renderSajuReport as renderSajuProfileReport } from './sajuInterpretation.js';
 import { createDailyFortune as createRuleDailyFortune } from './dailyFortune.js';
@@ -358,8 +358,17 @@ function renderResult({ scores, features, winner, top, partAnimals, saju, daily,
         </div>
     `).join('');
 
-    partReading.innerHTML = renderPartAnimalReport(partAnimals);
-    resultDetail.innerHTML = renderFaceReadingReport(winner, partAnimals, features);
+    partReading.innerHTML = renderPartAnimalReport(partAnimals, features);
+    resultDetail.innerHTML = `
+        <details class="report-disclosure" open>
+            <summary>${winner.emoji} ${winner.name} 상세 리포트</summary>
+            ${renderAnimalTypeReport(winner)}
+        </details>
+        <details class="report-disclosure" open>
+            <summary>관상 총평</summary>
+            ${renderFaceReadingReport(winner, partAnimals, features)}
+        </details>
+    `;
     sajuReading.innerHTML = renderSajuProfileReport(saju);
     gyeokReading.innerHTML = renderGyeokReference(saju, partAnimals);
     integrationReading.innerHTML = renderIntegratedReading(winner, partAnimals, saju, features);
@@ -388,21 +397,21 @@ function renderResult({ scores, features, winner, top, partAnimals, saju, daily,
 
 function renderGyeokReference(saju, partAnimals) {
     if (!saju.gyeokguk) {
-        return '<p><strong>격국 참고</strong><br>생년월일이 없으면 월령의 그릇을 따로 세우지 않습니다. 태어난 날을 더하면 사주의 격국과 관상의 접점을 함께 살필 수 있습니다.</p>';
+        return reportBlock('격국 참고', '생년월일 정보가 없으면 격국 참고 해석은 생략됩니다. 태어난 날을 입력하면 사주의 기본 기질과 얼굴에서 보이는 인상을 함께 비교해볼 수 있습니다.');
     }
     const { gyeokguk } = saju;
     if (!gyeokguk.reference) {
         return `
-            <p><strong>${gyeokguk.name} · 월령의 그릇</strong><br>${gyeokguk.basis} 현재 제공된 연구 자료는 정인격과 식신격을 중심으로 정리되어, 이 격국은 기본 사주 리포트 안에서만 참고합니다.</p>
-            <p><strong>관상과의 대조</strong><br>사진에서는 눈의 상이 ${partAnimals.eyes.name}, 입의 상이 ${partAnimals.mouth.name}, 윤곽의 상이 ${partAnimals.outline.name}으로 읽혔습니다. 이후 격국별 자료가 늘어나면 이 자리에 더 정밀한 대조가 더해집니다.</p>
+            ${reportBlock(`${gyeokguk.name} 참고`, `${gyeokguk.basis} 이 항목은 전문 사주 용어를 그대로 풀이하기보다, 태어난 달의 흐름이 기본 성향을 어떻게 도와주는지 가볍게 참고하는 영역입니다. 현재 자세한 연구 자료가 있는 격국은 일부라서, 이 결과는 기본 사주 리포트의 보조 설명으로 보는 것이 좋습니다.`)}
+            ${reportBlock('관상과의 대조', `사진에서는 눈의 인상이 ${partAnimals.eyes.name}, 입과 웃음의 인상이 ${partAnimals.mouth.name}, 윤곽의 인상이 ${partAnimals.outline.name}으로 읽혔습니다. 이 조합은 겉으로 보이는 첫인상과 사주가 말하는 기본 기질이 어디서 만나고 어디서 다르게 보이는지 살피기 위한 참고 자료입니다.`)}
         `;
     }
     const reference = gyeokguk.reference;
     const traits = reference.traits.slice(0, 4).map(([label, value]) => `${label} ${value}`).join(' · ');
     return `
-        <p><strong>${reference.name} · ${reference.title}</strong><br>${gyeokguk.basis} ${reference.interpretation}</p>
-        <p><strong>연구에서 본 얼굴의 결</strong><br>${traits}</p>
-        <p><strong>현재 리포트와의 접점</strong><br>사진에서는 눈의 상이 ${partAnimals.eyes.name}, 입의 상이 ${partAnimals.mouth.name}, 윤곽의 상이 ${partAnimals.outline.name}으로 읽혔습니다. 격국의 경향과 실제 얼굴 특징이 겹치는 지점을 참고 자료로 비춰봅니다.</p>
+        ${reportBlock(`${reference.name} 참고`, `${gyeokguk.basis} ${reference.interpretation} 이 설명은 성격을 단정하기보다, 반복해서 나타날 수 있는 태도와 관계 방식을 이해하기 위한 보조 해석입니다.`)}
+        ${reportBlock('연구 자료에서 본 얼굴 특징', `${traits}. 이 값들은 얼굴 특징과 격국 자료를 비교한 참고 지표이며, 실제 인상은 표정과 분위기에 따라 달라질 수 있습니다.`)}
+        ${reportBlock('현재 리포트와의 접점', `사진에서는 눈의 인상이 ${partAnimals.eyes.name}, 입과 웃음의 인상이 ${partAnimals.mouth.name}, 윤곽의 인상이 ${partAnimals.outline.name}으로 읽혔습니다. 격국의 경향과 실제 얼굴 특징이 겹치는 지점을 보면, 겉으로 보이는 이미지와 타고난 기질이 어떻게 함께 작동하는지 더 입체적으로 볼 수 있습니다.`)}
     `;
 }
 
@@ -429,10 +438,11 @@ function buildComboSummary(top) {
     const softCount = ids.filter((id) => softIds.includes(id)).length;
     const activeCount = ids.filter((id) => activeIds.includes(id)).length;
 
-    if (sharpCount >= 2) return `${first.name} + ${second.name} + ${third.name}의 조합은 눈매 끝과 윤곽선에서 먼저 살아납니다. 조용히 있어도 오래 남는 상입니다.`;
-    if (softCount >= 2 && activeCount >= 1) return `${first.name} + ${second.name} + ${third.name}의 조합은 밝은 빛과 부드러운 결이 함께 놓입니다. 사람의 경계를 누그러뜨리는 상입니다.`;
-    if (ids.includes('horse') || ids.includes('camel')) return `${first.name} + ${second.name} + ${third.name}의 조합은 긴 호흡과 차분한 여백을 품습니다. 서두르지 않을수록 품이 드러납니다.`;
-    return `${first.name} + ${second.name} + ${third.name}의 조합은 한 가지 기운에 머물지 않고, 부드러움과 선명함이 번갈아 드러나는 상입니다.`;
+    const base = `${first.name}이 가장 앞에 있고, ${second.name}과 ${third.name}이 뒤에서 분위기를 보태는 조합입니다. `;
+    if (sharpCount >= 2) return `${base}이 조합은 눈매와 윤곽에서 선명함이 먼저 살아나 조용히 있어도 존재감이 남기 쉽습니다. 사람들은 당신을 쉽게 휩쓸리지 않는 사람, 자기 기준이 있는 사람으로 볼 수 있습니다. 다만 첫인상이 강하게 느껴질 수 있으니 편한 자리에서는 표정과 말투를 조금 부드럽게 열어두면 매력이 더 잘 전달됩니다.`;
+    if (softCount >= 2 && activeCount >= 1) return `${base}부드러운 인상과 밝은 에너지가 함께 있어 사람의 경계를 낮추는 힘이 큽니다. 처음 만난 사람도 당신을 어렵게 느끼기보다 편하게 다가갈 가능성이 높습니다. 다만 늘 괜찮고 밝아 보이면 내 피로가 늦게 보일 수 있으니, 가까운 사람에게는 힘든 마음도 조금씩 드러내는 것이 좋습니다.`;
+    if (ids.includes('horse') || ids.includes('camel')) return `${base}긴 호흡과 차분한 분위기가 강해 빨리 소비되는 인상보다 시간이 지날수록 더 안정적으로 보입니다. 처음에는 조금 느긋하거나 조용해 보여도, 오래 볼수록 생각이 깊고 쉽게 흔들리지 않는 사람으로 느껴질 수 있습니다. 중요한 관계에서는 반응을 너무 늦추지 않고 관심을 표현하면 장점이 더 잘 살아납니다.`;
+    return `${base}한 가지 분위기로만 고정되지 않고 부드러움과 선명함, 밝음과 차분함이 번갈아 드러납니다. 그래서 상황에 따라 사람들에게 다른 매력을 남길 수 있습니다. 이 조합은 처음엔 편안하게 보이다가 가까워질수록 생각보다 입체적인 사람이라는 느낌을 줄 가능성이 큽니다.`;
 }
 
 function getUserProfile() {
@@ -448,31 +458,38 @@ function getUserProfile() {
 
 function renderDailyFortune(daily) {
     return [
-        ['오늘의 흐름', daily.flow],
+        ['오늘의 전체 흐름', daily.flow],
         ['관계운', daily.relation],
-        ['일운과 학업운', daily.focus],
-        ['감정운', daily.emotion],
+        ['연애운', daily.love],
+        ['일/학업운', daily.focus],
         ['소비운', daily.money],
-        ['조심할 결', daily.caution],
-        ['오늘의 작은 행', daily.action],
+        ['감정운', daily.emotion],
+        ['오늘 조심하면 좋은 점', daily.caution],
+        ['오늘 하면 좋은 행동', daily.action],
+        ['오늘의 한마디 조언', daily.meditation],
         ['행운 키워드', daily.keyword],
         ['행운 색상', daily.color],
         ['오늘의 수호 동물', `${daily.guardian.emoji} ${daily.guardian.name}`],
-        ['오늘의 한 문장', daily.meditation],
     ].map(([label, value]) => `<div class="fortune-item"><strong>${label}</strong><p>${value}</p></div>`).join('');
 }
 
 function renderWeeklyFortune(weekly) {
     return [
-        `<p><strong>이번 주 핵심 키워드</strong><br>${weekly.keyword}</p>`,
-        `<p><strong>관계 흐름</strong><br>${weekly.relation}</p>`,
-        `<p><strong>일/학업 흐름</strong><br>${weekly.work}</p>`,
-        `<p><strong>감정 흐름</strong><br>${weekly.emotion}</p>`,
-        `<p><strong>선택의 태도</strong><br>${weekly.choice}</p>`,
-        `<p><strong>피하면 좋은 습관</strong><br>${weekly.avoid}</p>`,
-        `<p><strong>이번 주 상징 동물</strong><br>${weekly.guardian.emoji} ${weekly.guardian.name}</p>`,
-        `<p><strong>이번 주 문장</strong><br>${weekly.sentence}</p>`,
+        reportBlock('이번 주 전체 흐름', weekly.overall),
+        reportBlock('주초의 분위기', weekly.earlyWeek),
+        reportBlock('주중의 전환점', weekly.midWeek),
+        reportBlock('주말의 흐름', weekly.weekend),
+        reportBlock('관계에서 눈여겨볼 점', weekly.relation),
+        reportBlock('일과 학업에서 유리한 태도', weekly.work),
+        reportBlock('돈과 소비에서 조심할 점', weekly.money),
+        reportBlock('이번 주의 감정 흐름', weekly.emotion),
+        reportBlock('이번 주 실천하면 좋은 한 가지', weekly.choice),
+        reportBlock('이번 주를 요약하는 문장', `${weekly.sentence} 이번 주 핵심 키워드는 ${weekly.keyword}이며, 상징 동물은 ${weekly.guardian.emoji} ${weekly.guardian.name}입니다. ${weekly.avoid}`),
     ].join('');
+}
+
+function reportBlock(title, body) {
+    return `<section class="report-block"><h4>${title}</h4><p>${body}</p></section>`;
 }
 
 function renderTalismanCard(symbol, winner, daily, profile) {
@@ -588,14 +605,14 @@ function renderCompareResult() {
     const mode = compareModeInput.value;
     const shared = currentResult.top.find((animal) => comparePersonResult.top.some((other) => other.id === animal.id));
     const modeText = {
-        friend: '벗의 인연에서는 서로의 속도를 억지로 맞추기보다, 각자의 쉼을 인정할 때 결이 맑아집니다.',
-        lover: '연인의 인연에서는 끌림만큼 호흡이 중요합니다. 급히 다가서기보다 같은 달을 보는 시간이 필요합니다.',
-        family: '가족의 인연에서는 익숙함에 묻힌 말을 다시 곱게 꺼낼 때 막힌 기운이 풀립니다.',
-        colleague: '함께 일하는 인연에서는 역할의 선을 분명히 할수록 서로의 기운이 부딪히지 않습니다.',
+        friend: '친구 관계에서는 한 사람이 분위기를 열고 다른 사람이 안정감을 잡아줄 때 편한 케미가 생깁니다. 서로의 반응 속도가 다를 수 있으니, 서운한 마음을 쌓기보다 가볍게 말로 확인하는 편이 좋습니다.',
+        lover: '연인 관계에서는 처음의 끌림만큼 생활 속 호흡이 중요합니다. 한쪽은 더 빨리 표현하고 한쪽은 더 천천히 확인할 수 있으니, 애정 표현의 방식이 다르다는 점을 이해하면 관계가 편해집니다.',
+        family: '가족 관계에서는 익숙하다는 이유로 서로의 변화를 놓치기 쉽습니다. 같은 말도 상대가 받아들이기 쉬운 온도로 바꾸면 오래 쌓인 오해가 줄어들 수 있습니다.',
+        colleague: '동료 관계에서는 역할과 기대치를 분명히 할수록 좋은 조합이 됩니다. 서로의 장점이 다르게 드러나는 만큼, 감정으로 추측하기보다 기준과 일정을 말로 맞추는 편이 좋습니다.',
     }[mode];
     const note = shared
-        ? `두 사람의 상에는 ${shared.name}의 결이 함께 머뭅니다. 한 사람은 ${a.name}의 ${a.keywords[0]}이, 다른 사람은 ${b.name}의 ${b.keywords[0]}이 더 앞에 놓입니다. ${modeText}`
-        : `두 사람의 대표 상은 다르지만, 한쪽에는 ${a.name}의 ${a.keywords[0]}이, 다른 쪽에는 ${b.name}의 ${b.keywords[0]}이 놓여 서로 다른 바람을 만듭니다. ${modeText}`;
+        ? `두 사람의 상에는 ${shared.name}의 분위기가 함께 보입니다. 공통점이 있기 때문에 처음에는 서로를 이해하기 쉽지만, 한 사람은 ${a.name}의 ${a.keywords[0]}이 더 앞서고 다른 사람은 ${b.name}의 ${b.keywords[0]}이 더 강하게 보입니다. 비슷한 듯 다른 지점을 인정하면 편안한 궁합으로 이어질 수 있습니다. ${modeText}`
+        : `두 사람의 대표 상은 다르지만, 그래서 서로에게 새로운 분위기를 줄 수 있습니다. 한쪽에는 ${a.name}의 ${a.keywords[0]}이, 다른 쪽에는 ${b.name}의 ${b.keywords[0]}이 놓여 관계 안에서 역할이 다르게 나뉠 가능성이 큽니다. 다름을 고치려 하기보다 각자의 속도와 표현 방식을 이해하는 것이 중요합니다. ${modeText}`;
     compareResult.innerHTML = `
         <div class="compare-cards">
             <div class="compare-person"><div class="emoji">${a.emoji}</div><strong>나: ${a.name}</strong><p>${a.percent}% · ${a.tagline}</p></div>

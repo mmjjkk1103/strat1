@@ -8,11 +8,11 @@ const cardLabels = {
 export function createShareSummaries(result) {
     const { userProfile, winner, partAnimals, saju, daily } = result;
     const name = userProfile.name;
-    const oneLine = `${name}의 상에는 눈의 ${plainAnimal(partAnimals.eyes)}, 입가의 ${plainAnimal(partAnimals.mouth)}이 함께 머뭅니다. 타고난 결은 ${saju.element.name}의 ${saju.element.keywords[0]}에 닿아 있고, 오늘은 ${daily.keyword}의 기운이 길을 엽니다.`;
-    const face = `${name}의 얼굴은 ${winner.name}의 결이 가장 앞섭니다. 눈에는 ${partAnimals.eyes.keywords[0]}이, 입가에는 ${partAnimals.mouth.keywords[0]}이 머물러 사람의 마음을 밀어붙이기보다 곁에 머물게 하는 상으로 읽힙니다.`;
+    const oneLine = `${name}는 ${winner.name}. 겉은 ${winner.keywords[0]}, 속은 ${saju.element.keywords[0]}이 깊은 사람.`;
+    const face = `${name}의 얼굴은 ${winner.name}에 가깝습니다. 눈은 ${plainAnimal(partAnimals.eyes)}, 입가는 ${plainAnimal(partAnimals.mouth)} 분위기가 함께 보여요.`;
     const gyeokText = saju.gyeokguk?.name ? `${saju.gyeokguk.name}의 그릇 위에 ` : '';
-    const sajuText = `${name}의 일간은 ${saju.dayMaster.stem}(${saju.element.name})입니다. ${gyeokText}겉으로 드러나는 말보다 안쪽에서 익어가는 생각이 힘이 되며, 이번 주에는 ${saju.element.keywords[0]}의 결을 가지런히 할수록 운이 바르게 섭니다.`;
-    const today = `오늘의 수호 동물은 ${daily.guardian.name}. ${daily.flow} 행운의 말은 ${daily.keyword}, 오늘의 한 문장은 "${daily.meditation}"입니다.`;
+    const sajuText = `${name}의 일간은 ${saju.dayMaster.stem}(${saju.element.name})입니다. ${gyeokText}${saju.element.keywords[0]}과 ${saju.element.keywords[1]}이 중요한 사람으로 읽혔어요.`;
+    const today = `오늘의 수호 동물은 ${daily.guardian.name}. 행운 키워드는 ${daily.keyword}, 조언은 "${daily.meditation}"`;
 
     return { oneLine, face, saju: sajuText, daily: today };
 }
@@ -114,8 +114,8 @@ function getCardPayload(type, result) {
             seal: winner.emoji,
             rows: [
                 { label: '대표 동물상', value: `${winner.name} · ${winner.percent}%` },
-                { label: '관상 총평', value: `눈에는 ${partAnimals.eyes.keywords[0]}이 머물고, 입가에는 ${partAnimals.mouth.keywords[0]}의 빛이 서려 있습니다.` },
-                { label: '사주 총평', value: `${saju.element.name}의 결은 ${saju.element.keywords.slice(0, 2).join('과 ')}으로 흐릅니다.` },
+                { label: '관상 총평', value: `겉은 ${winner.keywords[0]}, 가까워질수록 ${winner.keywords[1]}이 보이는 타입.` },
+                { label: '사주 총평', value: `${saju.element.name} · ${saju.element.keywords.slice(0, 2).join('과 ')}` },
                 { label: '오늘의 흐름', value: daily.keyword },
             ],
             quote: daily.meditation,
@@ -131,7 +131,7 @@ function getCardPayload(type, result) {
                 { label: '윤곽의 상', value: `${partAnimals.outline.name} · ${partAnimals.outline.keywords[1]}` },
                 { label: '관계의 기운', value: winner.mood },
             ],
-            quote: `이 상은 사람을 밀어붙이기보다 스스로 곁에 머물게 하는 힘을 품습니다.`,
+            quote: `${winner.name}의 장점은 처음보다 가까워질수록 더 잘 보입니다.`,
         },
         saju: {
             kicker: 'SAJU RECORD',

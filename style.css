@@ -346,7 +346,8 @@ h1 { margin: 0; font-size: clamp(2.35rem, 6vw, 4.05rem); line-height: 1.13; lett
 .result-card { padding: 18px; animation: fadeUp 0.45s ease both; }
 .result-card h3 { margin: 0 0 14px; font-size: 1.14rem; }
 .feature-comments { display: grid; gap: 10px; margin-bottom: 10px; }
-.feature-comments p, .result-detail p { margin: 0; padding: 12px 14px; border-radius: 16px; background: var(--surface-solid); color: var(--text-secondary); line-height: 1.65; }
+.feature-comments p, .result-detail p { margin: 0; color: var(--text-secondary); line-height: 1.78; }
+.feature-comments p { padding: 12px 14px; border-radius: 16px; background: var(--surface-solid); }
 .top-three { display: grid; gap: 10px; margin-bottom: 10px; }
 .top-item { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 18px; background: var(--surface-solid); }
 .top-rank { color: var(--primary-dark); font-weight: 950; }
@@ -373,6 +374,56 @@ h1 { margin: 0; font-size: clamp(2.35rem, 6vw, 4.05rem); line-height: 1.13; lett
 .part-item p,
 .fortune-item p { margin: 0; }
 .fortune-grid { display: grid; gap: 10px; }
+.report-disclosure {
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: var(--surface-solid);
+    overflow: hidden;
+}
+.report-disclosure summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 14px 16px;
+    color: var(--text);
+    font-weight: 950;
+}
+.report-disclosure summary::-webkit-details-marker { display: none; }
+.report-disclosure summary::after {
+    content: '접기';
+    float: right;
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+.report-disclosure:not([open]) summary::after { content: '펼치기'; }
+.report-block {
+    display: grid;
+    gap: 7px;
+    padding: 14px 16px;
+    border-top: 1px solid var(--line);
+}
+.report-block h4 {
+    margin: 0;
+    color: var(--text);
+    font-size: 0.98rem;
+    line-height: 1.35;
+}
+.report-block p {
+    margin: 0;
+    max-width: 74ch;
+    color: var(--text-secondary);
+    line-height: 1.82;
+}
+.part-item.report-disclosure {
+    padding: 0;
+    line-height: 1.72;
+}
+.part-item.report-disclosure p {
+    padding: 0 16px 12px;
+    line-height: 1.76;
+}
+.part-item.report-disclosure p:first-of-type { padding-top: 4px; }
+.fortune-item p { line-height: 1.72; }
 .talisman-preview {
     overflow: hidden;
     border-radius: 22px;
@@ -571,7 +622,9 @@ h1 { margin: 0; font-size: clamp(2.35rem, 6vw, 4.05rem); line-height: 1.13; lett
     .download-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .download-card { grid-template-columns: 1fr; align-content: start; }
     .download-card span { grid-row: auto; }
-    .score-card, .detail-card { grid-column: span 1; }
+    .score-card { grid-column: span 1; }
+    .detail-card, .part-card, .saju-card, .gyeok-card, .integration-card, .daily-card, .weekly-card { grid-column: 1 / -1; }
+    .fortune-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .info-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .research-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .animal-guide-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }

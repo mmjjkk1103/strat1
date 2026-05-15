@@ -31,10 +31,11 @@ export function renderPartAnimals(parts, features = {}) {
 export function renderAnimalTypeReport(winner) {
     const report = winner.report;
     return [
-        reportBlock('대표 동물상 한 줄 요약', `${winner.name}은 ${winner.summary} ${winner.percent ? `이번 분석에서는 ${winner.percent}%로 가장 높게 나타났습니다.` : ''}`),
-        reportBlock('얼굴에서 그렇게 읽힌 이유', report.why),
-        reportBlock('처음 만난 사람이 느끼기 쉬운 인상', report.first),
-        reportBlock('친해졌을 때 더 드러나는 매력', report.close),
+        reportBlock('대표 동물상', `당신은 ${winner.name}에 가까운 인상입니다. 숫자로 딱 잘라 말하기보다, 사람들이 처음 봤을 때 “아, 이런 분위기 있네” 하고 느끼기 쉬운 쪽에 가깝습니다.`),
+        reportBlock('한 줄로 말하면', oneLineAnimal(winner.id)),
+        reportBlock('얼굴에서 그렇게 읽힌 이유', `${report.why} 어렵게 말하면 관상 포인트지만, 쉽게 말하면 얼굴에서 먼저 풍기는 공기가 이쪽에 가깝다는 뜻입니다.`),
+        reportBlock('당신을 처음 본 사람은', `${report.first} 낯을 가리는 날에도 얼굴만 보면 그렇게 안 보일 수 있습니다. 그래서 실제 성격보다 첫인상이 먼저 오해를 만들기도 하고, 반대로 좋은 시작점을 만들어주기도 합니다.`),
+        reportBlock('친해지고 나면 보이는 모습', report.close),
         reportBlock('관계 속에서 보이는 모습', report.relation),
         reportBlock('연애에서 느껴질 수 있는 분위기', report.romance),
         reportBlock('이 동물상의 강점', report.strength),
@@ -42,6 +43,23 @@ export function renderAnimalTypeReport(winner) {
         reportBlock('나에게 어울리는 분위기나 스타일 제안', report.style),
         reportBlock('마무리', report.closeLine),
     ].join('');
+}
+
+function oneLineAnimal(id) {
+    return {
+        dog: '처음부터 “이 사람 괜찮을 것 같다”는 느낌을 주는 편입니다.',
+        cat: '쉽게 다가가긴 어렵지만, 그래서 더 궁금해지는 타입입니다.',
+        rabbit: '세게 튀지는 않아도 묘하게 보호 본능을 건드리는 인상입니다.',
+        fox: '눈치 빠르고 센스 있어 보여서, 가만히 있어도 분위기를 읽는 사람처럼 보입니다.',
+        deer: '조용한데 이상하게 오래 기억나는 맑은 인상입니다.',
+        bear: '옆에 있으면 괜히 마음이 좀 안정될 것 같은 얼굴입니다.',
+        wolf: '말이 많지 않아도 자기 기준이 있어 보이는 타입입니다.',
+        monkey: '대화가 시작되면 얼굴이 더 살아나는 사람입니다.',
+        horse: '서두르지 않을수록 단정한 매력이 커지는 인상입니다.',
+        dinosaur: '무난하게 묻히기보다 한 번 보면 기억에 남는 얼굴입니다.',
+        camel: '빨리 친해지는 타입은 아니어도 볼수록 여운이 남는 쪽입니다.',
+        quokka: '말 걸기 전부터 왠지 편한 사람입니다.',
+    }[id] || '처음보다 볼수록 설명할 말이 많아지는 인상입니다.';
 }
 
 export function renderPhysiognomyReport(winner, parts, features) {

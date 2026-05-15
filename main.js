@@ -48,13 +48,9 @@ const resultPanel = document.getElementById('result-panel');
 const winnerCard = document.getElementById('winner-card');
 const featureComments = document.getElementById('feature-comments');
 const featureSummary = document.getElementById('feature-summary');
-const topThree = document.getElementById('top-three');
-const comboSummary = document.getElementById('combo-summary');
-const scoreList = document.getElementById('score-list');
 const resultDetail = document.getElementById('result-detail');
 const partReading = document.getElementById('part-reading');
 const sajuReading = document.getElementById('saju-reading');
-const gyeokReading = document.getElementById('gyeok-reading');
 const integrationReading = document.getElementById('integration-reading');
 const dailyFortune = document.getElementById('daily-fortune');
 const weeklyFortune = document.getElementById('weekly-fortune');
@@ -333,7 +329,7 @@ function renderResult({ scores, features, winner, top, partAnimals, saju, daily,
             <div class="winner-emoji">${winner.emoji}</div>
             <p class="winner-label">종합 핵심 결과</p>
             <h2>${userProfile.name}님은 ${coreSummary.title}</h2>
-            <p class="winner-percent">겉의 인상 ${winner.name} ${winner.percent}% · 속의 기질 ${saju.element.name}</p>
+            <p class="winner-subtitle">대표 동물상: ${winner.name} · 속의 힌트: ${saju.element.name}</p>
             <p class="winner-message">${coreSummary.body}</p>
             <div class="keyword-row">
                 <span>보이는 나: ${winner.keywords[0]}</span>
@@ -345,23 +341,7 @@ function renderResult({ scores, features, winner, top, partAnimals, saju, daily,
 
     const comments = buildFeatureComments(winner, top, features);
     featureComments.innerHTML = comments.slice(0, 3).map((comment) => `<p>${comment}</p>`).join('');
-    featureSummary.textContent = `이 결들이 ${top.map((animal) => animal.name).join('·')}의 상을 앞으로 불러냈습니다.`;
-
-    topThree.innerHTML = top.map((animal, index) => `
-        <div class="top-item">
-            <span class="top-rank">${index + 1}위</span>
-            <span class="top-animal">${animal.emoji} ${animal.name}</span>
-            <strong>${animal.percent}%</strong>
-        </div>
-    `).join('');
-    comboSummary.textContent = buildComboSummary(top);
-
-    scoreList.innerHTML = scores.map((animal, index) => `
-        <div class="score-row ${index < 3 ? 'is-top' : ''}">
-            <div class="score-head"><span>${index + 1}. ${animal.emoji} ${animal.name}</span><strong>${animal.percent}%</strong></div>
-            <div class="score-bar"><span data-width="${animal.percent}%"></span></div>
-        </div>
-    `).join('');
+    featureSummary.textContent = `한마디로, 당신은 ${winner.name}에 가까운 인상입니다. 숫자로 따지기보다 “처음 봤을 때 이런 느낌이 있구나” 하고 읽으면 더 재밌습니다.`;
 
     partReading.innerHTML = renderPartAnimalReport(partAnimals, features);
     resultDetail.innerHTML = `
@@ -375,7 +355,6 @@ function renderResult({ scores, features, winner, top, partAnimals, saju, daily,
         </details>
     `;
     sajuReading.innerHTML = renderSajuProfileReport(saju);
-    if (gyeokReading) gyeokReading.innerHTML = renderGyeokReference(saju, partAnimals);
     integrationReading.innerHTML = renderIntegratedReading(winner, partAnimals, saju, features);
     dailyFortune.innerHTML = renderDailyFortune(daily);
     weeklyFortune.innerHTML = renderWeeklyFortune(weekly);
@@ -393,32 +372,8 @@ function renderResult({ scores, features, winner, top, partAnimals, saju, daily,
     quizResult.textContent = '문항을 고르면 스스로 느끼는 상과 사진에서 읽힌 상을 나란히 비춰봅니다.';
     resultPanel.hidden = false;
     resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    requestAnimationFrame(() => {
-        scoreList.querySelectorAll('.score-bar span').forEach((bar) => {
-            bar.style.width = bar.dataset.width;
-        });
-    });
 }
 
-function renderGyeokReference(saju, partAnimals) {
-    if (!saju.gyeokguk) {
-        return reportBlock('격국 참고', '생년월일 정보가 없으면 격국 참고 해석은 생략됩니다. 태어난 날을 입력하면 사주의 기본 기질과 얼굴에서 보이는 인상을 함께 비교해볼 수 있습니다.');
-    }
-    const { gyeokguk } = saju;
-    if (!gyeokguk.reference) {
-        return `
-            ${reportBlock(`${gyeokguk.name} 참고`, `${gyeokguk.basis} 이 항목은 전문 사주 용어를 그대로 풀이하기보다, 태어난 달의 흐름이 기본 성향을 어떻게 도와주는지 가볍게 참고하는 영역입니다. 현재 자세한 연구 자료가 있는 격국은 일부라서, 이 결과는 기본 사주 리포트의 보조 설명으로 보는 것이 좋습니다.`)}
-            ${reportBlock('관상과의 대조', `사진에서는 눈의 인상이 ${partAnimals.eyes.name}, 입과 웃음의 인상이 ${partAnimals.mouth.name}, 윤곽의 인상이 ${partAnimals.outline.name}으로 읽혔습니다. 이 조합은 겉으로 보이는 첫인상과 사주가 말하는 기본 기질이 어디서 만나고 어디서 다르게 보이는지 살피기 위한 참고 자료입니다.`)}
-        `;
-    }
-    const reference = gyeokguk.reference;
-    const traits = reference.traits.slice(0, 4).map(([label, value]) => `${label} ${value}`).join(' · ');
-    return `
-        ${reportBlock(`${reference.name} 참고`, `${gyeokguk.basis} ${reference.interpretation} 이 설명은 성격을 단정하기보다, 반복해서 나타날 수 있는 태도와 관계 방식을 이해하기 위한 보조 해석입니다.`)}
-        ${reportBlock('연구 자료에서 본 얼굴 특징', `${traits}. 이 값들은 얼굴 특징과 격국 자료를 비교한 참고 지표이며, 실제 인상은 표정과 분위기에 따라 달라질 수 있습니다.`)}
-        ${reportBlock('현재 리포트와의 접점', `사진에서는 눈의 인상이 ${partAnimals.eyes.name}, 입과 웃음의 인상이 ${partAnimals.mouth.name}, 윤곽의 인상이 ${partAnimals.outline.name}으로 읽혔습니다. 격국의 경향과 실제 얼굴 특징이 겹치는 지점을 보면, 겉으로 보이는 이미지와 타고난 기질이 어떻게 함께 작동하는지 더 입체적으로 볼 수 있습니다.`)}
-    `;
-}
 
 function buildFeatureComments(winner, top, features) {
     const activeFeatures = Object.entries(winner.weights)
@@ -429,7 +384,7 @@ function buildFeatureComments(winner, top, features) {
         .filter(Boolean);
     const comments = [...winner.commentTemplates];
     if (activeFeatures.length) comments.splice(1, 0, `${activeFeatures.join(', ')}의 결이 사진 안에서 또렷하게 드러났습니다.`);
-    comments.push(`그래서 ${top.map((animal) => animal.name).join(', ')}의 기운이 앞자리에 놓였습니다.`);
+    comments.push(`그래서 사진만 보면 ${winner.name} 쪽의 분위기가 먼저 떠오릅니다. 꼭 닮았다기보다, 사람들이 당신을 처음 볼 때 받는 느낌에 가깝습니다.`);
     return comments.slice(0, 4);
 }
 
@@ -468,8 +423,8 @@ function buildCoreResultSummary(winner, saju) {
             : activeAnimals.includes(winner.id)
                 ? '밝고 반응이 살아 있는 사람'
                 : '균형감 있게 기억되는 사람';
-    const title = `겉으로는 ${winner.keywords[0]}이 먼저 보이고, 안쪽에는 ${elementTone.label}이 흐르는 사람`;
-    const body = `얼굴에서는 ${winner.name}의 ${winner.keywords[0]}이 먼저 드러나 사람들이 당신을 ${outer}으로 느끼기 쉽습니다. 하지만 생년 정보로 읽은 흐름에서는 ${elementTone.hidden}도 함께 보입니다. 그래서 당신은 첫인상만으로 다 설명되기보다, 가까워질수록 겉의 분위기와 속의 기준이 함께 드러나는 타입에 가깝습니다.`;
+    const title = `겉으로는 ${winner.keywords[0]}이 먼저 보이고, 속으로는 ${elementTone.short}이 중요한 사람`;
+    const body = `얼굴만 보면 당신은 ${outer}으로 기억되기 쉽습니다. 처음 보는 사람도 “왠지 이런 분위기일 것 같다” 하고 꽤 빨리 이미지를 잡을 수 있습니다. 그런데 속을 보면 조금 더 재밌습니다. 생년 정보로 읽은 흐름에는 ${elementTone.hidden}이 함께 보입니다. 그래서 당신은 첫인상만으로 다 설명되는 사람은 아닙니다. 겉으로는 편하게 보이거나 단단해 보여도, 속에서는 은근히 오래 보고 판단하는 부분이 있을 수 있습니다. 가까워질수록 “어? 생각보다 깊네?”라는 말을 듣기 쉬운 타입입니다.`;
     return { title, body, keyword: elementTone.short };
 }
 
@@ -643,8 +598,8 @@ function renderCompareResult() {
         : `두 사람의 대표 상은 다르지만, 그래서 서로에게 새로운 분위기를 줄 수 있습니다. 한쪽에는 ${a.name}의 ${a.keywords[0]}이, 다른 쪽에는 ${b.name}의 ${b.keywords[0]}이 놓여 관계 안에서 역할이 다르게 나뉠 가능성이 큽니다. 다름을 고치려 하기보다 각자의 속도와 표현 방식을 이해하는 것이 중요합니다. ${modeText}`;
     compareResult.innerHTML = `
         <div class="compare-cards">
-            <div class="compare-person"><div class="emoji">${a.emoji}</div><strong>나: ${a.name}</strong><p>${a.percent}% · ${a.tagline}</p></div>
-            <div class="compare-person"><div class="emoji">${b.emoji}</div><strong>친구: ${b.name}</strong><p>${b.percent}% · ${b.tagline}</p></div>
+            <div class="compare-person"><div class="emoji">${a.emoji}</div><strong>나: ${a.name}</strong><p>${a.tagline}</p></div>
+            <div class="compare-person"><div class="emoji">${b.emoji}</div><strong>친구: ${b.name}</strong><p>${b.tagline}</p></div>
         </div>
         <p class="compare-note">${note}</p>
     `;

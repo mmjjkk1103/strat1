@@ -34,7 +34,7 @@ export async function shareReport(type, result) {
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png', 0.96));
     const file = blob ? new File([blob], `sanggyeol-${type}.png`, { type: 'image/png' }) : null;
     const shareData = {
-        title: `상결 ${cardLabels[type] || '리포트'}`,
+        title: `보이는 나, 진짜 나 ${cardLabels[type] || '리포트'}`,
         text,
         url: location.href,
     };
@@ -65,7 +65,7 @@ export function buildReportCanvas(type, result) {
     ctx.textAlign = 'center';
     ctx.fillStyle = '#f7e8bd';
     ctx.font = '700 34px serif';
-    ctx.fillText('相結', 540, 118);
+    ctx.fillText('나', 540, 118);
     ctx.font = '700 28px sans-serif';
     ctx.fillStyle = '#d9b86f';
     ctx.fillText(payload.kicker, 540, 164);
@@ -99,7 +99,7 @@ export function buildReportCanvas(type, result) {
     ctx.stroke();
     ctx.fillStyle = '#b9ad9a';
     ctx.font = '700 24px sans-serif';
-    ctx.fillText('상결 · AI 관상 사주 리포트', 540, 1538);
+    ctx.fillText('보이는 나, 진짜 나', 540, 1538);
     return canvas;
 }
 
@@ -110,10 +110,10 @@ function getCardPayload(type, result) {
         summary: {
             kicker: 'OVERALL READING',
             title: `${name}의 상`,
-            subtitle: `${symbol.title} · ${winner.name} ${winner.percent}%`,
+            subtitle: `${symbol.title} · ${winner.name}`,
             seal: winner.emoji,
             rows: [
-                { label: '대표 동물상', value: `${winner.name} · ${winner.percent}%` },
+                { label: '대표 동물상', value: `${winner.name}에 가까운 인상` },
                 { label: '관상 총평', value: `겉은 ${winner.keywords[0]}, 가까워질수록 ${winner.keywords[1]}이 보이는 타입.` },
                 { label: '사주 총평', value: `${saju.element.name} · ${saju.element.keywords.slice(0, 2).join('과 ')}` },
                 { label: '오늘의 흐름', value: daily.keyword },
@@ -122,7 +122,7 @@ function getCardPayload(type, result) {
         },
         face: {
             kicker: 'FACE READING',
-            title: `${name}의 관상`,
+            title: `${name}의 첫인상`,
             subtitle: `눈 ${plainAnimal(partAnimals.eyes)} · 입 ${plainAnimal(partAnimals.mouth)} · 윤곽 ${plainAnimal(partAnimals.outline)}`,
             seal: '相',
             rows: [
@@ -131,7 +131,7 @@ function getCardPayload(type, result) {
                 { label: '윤곽의 상', value: `${partAnimals.outline.name} · ${partAnimals.outline.keywords[1]}` },
                 { label: '관계의 기운', value: winner.mood },
             ],
-            quote: `${winner.name}의 장점은 처음보다 가까워질수록 더 잘 보입니다.`,
+            quote: `${winner.name}의 장점은 처음보다 가까워질수록 더 재밌게 보입니다.`,
         },
         saju: {
             kicker: 'SAJU RECORD',

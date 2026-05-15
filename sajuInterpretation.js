@@ -1,5 +1,4 @@
 import { guardianTitles } from './reading-data.js';
-import { renderManseryeokReferenceBlock } from './manseryeok-data.js';
 
 const elementLabels = { wood: '목', fire: '화', earth: '토', metal: '금', water: '수' };
 const elementPlain = {
@@ -81,9 +80,6 @@ export function renderSajuReport(saju) {
     const pillarLine = saju.pillars
         ? `년주 ${saju.pillars.year.label}, 월주 ${saju.pillars.month.label}, 일주 ${saju.pillars.day.label}, 시주 ${saju.pillars.hour?.label ?? '미상'}`
         : '생년월일 미입력으로 사주팔자 계산을 생략했습니다.';
-    const gyeokLine = saju.gyeokguk
-        ? reportBlock(`격국 참고 · ${saju.gyeokguk.name}`, `${saju.gyeokguk.basis} 격국은 사주를 더 자세히 볼 때 참고하는 보조 정보입니다. 여기서는 어려운 용어 자체보다, 태어난 달의 분위기가 기본 기질을 어떻게 돕거나 흔드는지 정도로 가볍게 참고하면 좋습니다. ${saju.gyeokguk.reference ? saju.gyeokguk.reference.interpretation : '현재 리포트에서는 생활 해석을 중심으로 풀어 보여드립니다.'}`)
-        : '';
     return [
         reportBlock('사주 계산값 요약', `${pillarLine}. 일간은 ${saju.dayMaster.stem}이고, 중심 오행은 ${element.name}입니다. 이 값은 성격을 단정하는 답이 아니라, 타고난 반응 방식과 에너지가 어디로 흐르기 쉬운지 참고하는 기준입니다.`),
         reportBlock('타고난 기본 성향', plain.core),
@@ -98,9 +94,7 @@ export function renderSajuReport(saju) {
         reportBlock('강점', plain.strength),
         reportBlock('조심하면 좋은 점', plain.caution),
         reportBlock('지금 삶에서 중요한 성장 포인트', plain.growth),
-        gyeokLine,
         reportBlock('오행과 음양 참고', `오행 분포는 ${renderElementSpread(saju.elements)}입니다. 음양은 양 ${saju.yinYang.yang} / 음 ${saju.yinYang.yin}로 나타납니다. ${saju.yinYang.yang >= saju.yinYang.yin ? '바깥으로 움직이고 표현하는 힘이 조금 더 앞설 수 있습니다. 다만 빠르게 움직일수록 쉬는 시간을 의식적으로 챙기는 것이 좋습니다.' : '안쪽에서 살피고 축적하는 힘이 조금 더 깊을 수 있습니다. 다만 생각이 오래 머물수록 작은 실행을 함께 두는 것이 좋습니다.'}`),
-        renderManseryeokReferenceBlock(),
         reportBlock('해석 기준', `${saju.calendarNote} ${saju.engineNote} 이 리포트는 자기 이해를 돕는 해석형 콘텐츠이며, 실제 선택은 현재 상황과 본인의 판단을 함께 보고 결정하는 것이 좋습니다.`),
     ].join('');
 }

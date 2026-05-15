@@ -32,7 +32,7 @@ export function createSajuProfile(profile) {
             dayMaster: { stem: '계', elementKey: 'water', element: elementProfiles.water, yinYang: 'yin' },
             gyeokguk: null,
             calendarNote: '생년월일이 없어 기본 리듬으로만 해석했습니다.',
-            engineNote: '사주 계산 엔진은 모듈화되어 있으며, 추후 @fullstackfamily/manseryeok v1.0.8 기준의 한국 만세력 계산기로 교체할 수 있습니다.',
+            engineNote: '입력 정보가 부족한 경우에는 기본 기질 흐름만 참고해 해석합니다.',
         };
     }
 
@@ -73,8 +73,8 @@ export function createSajuProfile(profile) {
         dayMaster,
         dominantElement: elementProfiles[dominantElementKey],
         gyeokguk,
-        calendarNote: `${profile.calendarType === 'lunar' ? '음력 입력값' : '양력'} 기준으로 계산했습니다. 현재 정적 버전은 입춘 기준 년주, 절기 기준 월주, 간지 일주를 자체 계산하며, 음력-양력 변환과 진태양시 보정은 정밀 만세력 연동 시 보강됩니다.`,
-        engineNote: 'npm 번들러가 없는 정적 사이트라 자체 계산 모듈을 적용했습니다. 기준 설명과 향후 교체 기준은 한국천문연구원(KASI) 데이터 기반 @fullstackfamily/manseryeok v1.0.8 정보를 반영했습니다.',
+        calendarNote: `${profile.calendarType === 'lunar' ? '음력 입력값' : '양력'} 기준으로 생년 흐름을 계산했습니다.`,
+        engineNote: '입력한 생년월일과 출생시간을 바탕으로 기본 기질, 관계 방식, 감정 흐름을 해석합니다.',
     };
 }
 

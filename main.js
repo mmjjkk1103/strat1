@@ -13,11 +13,11 @@ import { copyText, createShareSummaries, downloadReportCard, shareReport } from 
 const animalById = Object.fromEntries(animalProfiles.map((animal) => [animal.id, animal]));
 const validImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
 const loadingSteps = [
-    '눈과 입가에 머문 결을 살피고 있습니다...',
-    '얼굴의 윤곽과 기운의 방향을 맞추고 있습니다...',
-    '태어난 날의 흐름을 사주팔자에 얹고 있습니다...',
-    '오늘의 기운과 당신의 상을 겹쳐 읽고 있습니다...',
-    '운세첩을 가지런히 펼쳤습니다.',
+    '사람들에게 먼저 보이는 인상을 살피고 있습니다...',
+    '얼굴의 윤곽과 표정 흐름을 맞춰보고 있습니다...',
+    '태어난 날의 흐름으로 안쪽 기질을 읽고 있습니다...',
+    '겉의 인상과 속의 기질이 만나는 지점을 정리하고 있습니다...',
+    '종합 리포트를 펼쳤습니다.',
 ];
 
 const themeButtons = document.querySelectorAll('.theme-toggle');
@@ -327,14 +327,19 @@ async function analyzeCurrentImage(target) {
 
 function renderResult({ scores, features, winner, top, partAnimals, saju, daily, weekly, symbol, userProfile }) {
     const shareSummaries = createShareSummaries({ winner, partAnimals, saju, daily, userProfile });
+    const coreSummary = buildCoreResultSummary(winner, saju);
     winnerCard.innerHTML = `
         <div class="winner-main">
             <div class="winner-emoji">${winner.emoji}</div>
-            <p class="winner-label">대표로 드러난 상</p>
-            <h2>${userProfile.name}의 상은 ${winner.name}</h2>
-            <p class="winner-percent">가장 깊게 닿은 결 ${winner.percent}%</p>
-            <p class="winner-message">${symbol.title}. ${winner.resultMessage}</p>
-            <div class="keyword-row">${winner.keywords.map((keyword) => `<span>${keyword}</span>`).join('')}</div>
+            <p class="winner-label">종합 핵심 결과</p>
+            <h2>${userProfile.name}님은 ${coreSummary.title}</h2>
+            <p class="winner-percent">겉의 인상 ${winner.name} ${winner.percent}% · 속의 기질 ${saju.element.name}</p>
+            <p class="winner-message">${coreSummary.body}</p>
+            <div class="keyword-row">
+                <span>보이는 나: ${winner.keywords[0]}</span>
+                <span>숨은 나: ${saju.element.keywords[0]}</span>
+                <span>접점: ${coreSummary.keyword}</span>
+            </div>
         </div>
     `;
 
@@ -370,7 +375,7 @@ function renderResult({ scores, features, winner, top, partAnimals, saju, daily,
         </details>
     `;
     sajuReading.innerHTML = renderSajuProfileReport(saju);
-    gyeokReading.innerHTML = renderGyeokReference(saju, partAnimals);
+    if (gyeokReading) gyeokReading.innerHTML = renderGyeokReference(saju, partAnimals);
     integrationReading.innerHTML = renderIntegratedReading(winner, partAnimals, saju, features);
     dailyFortune.innerHTML = renderDailyFortune(daily);
     weeklyFortune.innerHTML = renderWeeklyFortune(weekly);
@@ -443,6 +448,29 @@ function buildComboSummary(top) {
     if (softCount >= 2 && activeCount >= 1) return `${base}부드러운 인상과 밝은 에너지가 함께 있어 사람의 경계를 낮추는 힘이 큽니다. 처음 만난 사람도 당신을 어렵게 느끼기보다 편하게 다가갈 가능성이 높습니다. 다만 늘 괜찮고 밝아 보이면 내 피로가 늦게 보일 수 있으니, 가까운 사람에게는 힘든 마음도 조금씩 드러내는 것이 좋습니다.`;
     if (ids.includes('horse') || ids.includes('camel')) return `${base}긴 호흡과 차분한 분위기가 강해 빨리 소비되는 인상보다 시간이 지날수록 더 안정적으로 보입니다. 처음에는 조금 느긋하거나 조용해 보여도, 오래 볼수록 생각이 깊고 쉽게 흔들리지 않는 사람으로 느껴질 수 있습니다. 중요한 관계에서는 반응을 너무 늦추지 않고 관심을 표현하면 장점이 더 잘 살아납니다.`;
     return `${base}한 가지 분위기로만 고정되지 않고 부드러움과 선명함, 밝음과 차분함이 번갈아 드러납니다. 그래서 상황에 따라 사람들에게 다른 매력을 남길 수 있습니다. 이 조합은 처음엔 편안하게 보이다가 가까워질수록 생각보다 입체적인 사람이라는 느낌을 줄 가능성이 큽니다.`;
+}
+
+function buildCoreResultSummary(winner, saju) {
+    const softAnimals = ['dog', 'rabbit', 'deer', 'bear', 'quokka'];
+    const sharpAnimals = ['cat', 'fox', 'wolf', 'dinosaur', 'camel'];
+    const activeAnimals = ['monkey', 'fox', 'quokka'];
+    const elementTone = {
+        wood: { label: '성장과 가능성을 찾는 기질', short: '성장', hidden: '새로운 가능성을 찾고 조금씩 방향을 넓히려는 마음' },
+        fire: { label: '표현과 몰입이 강한 기질', short: '표현', hidden: '마음이 움직이면 표현하고 몰입하려는 흐름' },
+        earth: { label: '안정과 신뢰를 중시하는 기질', short: '안정', hidden: '쉽게 흔들리기보다 오래 지키고 쌓으려는 마음' },
+        metal: { label: '기준과 판단이 분명한 기질', short: '기준', hidden: '흐린 것을 정리하고 기준을 세우려는 흐름' },
+        water: { label: '관찰과 깊이가 강한 기질', short: '깊이', hidden: '겉으로 크게 드러내기보다 안쪽에서 오래 생각을 정리하는 흐름' },
+    }[saju.dayMaster.elementKey] || { label: '자기 리듬을 지키는 기질', short: '균형', hidden: '자신의 속도로 판단하고 움직이려는 흐름' };
+    const outer = softAnimals.includes(winner.id)
+        ? '편안하고 부드럽게 보이는 사람'
+        : sharpAnimals.includes(winner.id)
+            ? '차분하지만 존재감이 분명한 사람'
+            : activeAnimals.includes(winner.id)
+                ? '밝고 반응이 살아 있는 사람'
+                : '균형감 있게 기억되는 사람';
+    const title = `겉으로는 ${winner.keywords[0]}이 먼저 보이고, 안쪽에는 ${elementTone.label}이 흐르는 사람`;
+    const body = `얼굴에서는 ${winner.name}의 ${winner.keywords[0]}이 먼저 드러나 사람들이 당신을 ${outer}으로 느끼기 쉽습니다. 하지만 생년 정보로 읽은 흐름에서는 ${elementTone.hidden}도 함께 보입니다. 그래서 당신은 첫인상만으로 다 설명되기보다, 가까워질수록 겉의 분위기와 속의 기준이 함께 드러나는 타입에 가깝습니다.`;
+    return { title, body, keyword: elementTone.short };
 }
 
 function getUserProfile() {

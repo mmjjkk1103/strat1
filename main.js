@@ -1,15 +1,13 @@
-import {
-    FaceLandmarker,
-    FilesetResolver,
-} from 'https://unpkg.com/@mediapipe/tasks-vision@0.10.35/vision_bundle.mjs';
 import { animalProfiles, featureLabels, quizQuestions } from './animal-data.js';
-import {
-    branchAnimals,
-    dailyFortuneTemplates,
-    elementProfiles,
-    guardianTitles,
-    weeklySentences,
-} from './reading-data.js';
+import { detectFaceLandmarks } from './faceLandmark.js';
+import { extractFaceFeatures as extractLandmarkFeatures } from './faceFeatureExtraction.js';
+import { calculateAnimalScores as scoreAnimalTypes, calculatePartAnimals as scorePartAnimals } from './animalTypeScoring.js';
+import { renderPartAnimals as renderPartAnimalReport, renderPhysiognomyReport as renderFaceReadingReport } from './physiognomyInterpretation.js';
+import { createSajuProfile } from './sajuCalculation.js';
+import { createSymbolicAnimalName as createSajuSymbol, renderSajuReport as renderSajuProfileReport } from './sajuInterpretation.js';
+import { createDailyFortune as createRuleDailyFortune } from './dailyFortune.js';
+import { createWeeklyFortune as createRuleWeeklyFortune } from './weeklyFortune.js';
+import { renderIntegrationReport as renderIntegratedReading } from './integratedReading.js';
 
 const animalById = Object.fromEntries(animalProfiles.map((animal) => [animal.id, animal]));
 const validImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
@@ -22,7 +20,6 @@ const loadingSteps = [
 ];
 
 const themeButtons = document.querySelectorAll('.theme-toggle');
-const heroCameraButton = document.getElementById('hero-camera');
 const imageUpload = document.getElementById('image-upload');
 const dropZone = document.getElementById('drop-zone');
 const startCameraButton = document.getElementById('start-camera');
@@ -82,7 +79,6 @@ const animalGuideGrid = document.getElementById('animal-guide-grid');
 const guideModal = document.getElementById('guide-modal');
 const modalContent = document.getElementById('modal-content');
 
-let faceLandmarker;
 let cameraStream;
 let captureTarget = 'main';
 let capturedCanvas;
@@ -126,7 +122,6 @@ function bindEvents() {
         });
     });
     dropZone.addEventListener('drop', (event) => handleImageFile(event.dataTransfer.files[0], 'main'));
-    heroCameraButton.addEventListener('click', () => startCamera('main'));
     startCameraButton.addEventListener('click', () => startCamera('main'));
     compareCameraButton.addEventListener('click', () => startCamera('compare'));
     capturePhotoButton.addEventListener('click', capturePhoto);
@@ -276,25 +271,21 @@ async function analyzeCurrentImage(target) {
     try {
         await waitForImageReady(source);
         await runLoadingSequence();
-        const detector = await getFaceLandmarker();
-        const result = detector.detect(source);
-        const faceCount = result.faceLandmarks.length;
-
-        if (faceCount === 0) throw new Error('NO_FACE');
-        if (faceCount > 1) throw new Error('MULTIPLE_FACES');
-
-        const features = extractFaceFeatures(result.faceLandmarks[0]);
-        const scores = calculateAnimalScores(features);
-        const partAnimals = calculatePartAnimals(features);
-        const saju = createSajuReading(userProfile);
-        const daily = createDailyFortune(scores[0], saju, userProfile);
-        const weekly = createWeeklyFortune(scores[0], saju, userProfile);
-        const symbol = createSymbolicAnimalName(scores[0], saju, userProfile);
+        const landmarks = await detectFaceLandmarks(source);
+        const features = extractLandmarkFeatures(landmarks);
+        const scores = scoreAnimalTypes(features, animalProfiles);
+        const partAnimals = scorePartAnimals(features, animalProfiles);
+        const saju = createSajuProfile(userProfile);
+        const daily = createRuleDailyFortune(scores[0], saju, userProfile, animalProfiles);
+        const weekly = createRuleWeeklyFortune(scores[0], saju, userProfile, animalProfiles);
+        const symbol = createSajuSymbol(scores[0], saju, userProfile);
         const analysis = {
             scores,
             features,
+            faceFeatures: features,
             partAnimals,
             saju,
+            sajuProfile: saju,
             daily,
             weekly,
             symbol,
@@ -302,7 +293,7 @@ async function analyzeCurrentImage(target) {
             winner: scores[0],
             top: scores.slice(0, 3),
         };
-        drawAnalysisOverlay(isCompare ? 'compare' : 'main', result.faceLandmarks[0], source);
+        drawAnalysisOverlay(isCompare ? 'compare' : 'main', landmarks, source);
 
         if (isCompare) {
             comparePersonResult = analysis;
@@ -323,93 +314,6 @@ async function analyzeCurrentImage(target) {
         hideLoading();
         button.disabled = false;
     }
-}
-
-async function getFaceLandmarker() {
-    if (faceLandmarker) return faceLandmarker;
-    const filesetResolver = await FilesetResolver.forVisionTasks('https://unpkg.com/@mediapipe/tasks-vision@0.10.35/wasm');
-    faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
-        baseOptions: {
-            modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task',
-            delegate: 'CPU',
-        },
-        runningMode: 'IMAGE',
-        numFaces: 3,
-    });
-    return faceLandmarker;
-}
-
-function extractFaceFeatures(landmarks) {
-    const box = getBounds(landmarks);
-    const faceWidth = box.width;
-    const faceHeight = box.height;
-    const aspect = faceWidth / faceHeight;
-    const leftEye = measureEye(landmarks, { outer: 33, inner: 133, top: 159, bottom: 145 });
-    const rightEye = measureEye(landmarks, { outer: 263, inner: 362, top: 386, bottom: 374 });
-    const avgEyeWidth = (leftEye.width + rightEye.width) / 2;
-    const avgEyeHeight = (leftEye.height + rightEye.height) / 2;
-    const eyeRoundnessRaw = avgEyeHeight / Math.max(avgEyeWidth, 0.001);
-    const mouthWidth = distance(landmarks[61], landmarks[291]);
-    const mouthHeight = distance(landmarks[13], landmarks[14]);
-    const mouthCenterY = (landmarks[13].y + landmarks[14].y) / 2;
-    const mouthCornerY = (landmarks[61].y + landmarks[291].y) / 2;
-    const jawWidth = distance(landmarks[172], landmarks[397]);
-    const cheekWidth = distance(landmarks[123], landmarks[352]);
-    const chinWidthRatio = jawWidth / Math.max(faceWidth, 0.001);
-    const midface = distance(landmarks[168], landmarks[2]) / Math.max(faceHeight, 0.001);
-    const eyeGap = distance(landmarks[133], landmarks[362]) / Math.max(faceWidth, 0.001);
-    const facialFeatureSpan = distance(landmarks[33], landmarks[263]) / Math.max(faceWidth, 0.001);
-    const browEyeGap = (Math.abs(landmarks[105].y - landmarks[159].y) + Math.abs(landmarks[334].y - landmarks[386].y)) / 2 / Math.max(faceHeight, 0.001);
-    const eyeTailTilt = ((landmarks[33].y - landmarks[133].y) + (landmarks[263].y - landmarks[362].y)) / 2;
-    const sharpJaw = clamp01((0.72 - chinWidthRatio) / 0.22 + (cheekWidth / faceWidth - 0.82) * 0.8);
-    const smileCurve = clamp01((mouthCenterY - mouthCornerY + 0.006) / 0.045);
-
-    return {
-        roundFace: clamp01(1 - Math.abs(aspect - 0.82) / 0.22),
-        longFace: clamp01((0.78 - aspect) / 0.2),
-        wideFace: clamp01((aspect - 0.82) / 0.18),
-        sharpJaw,
-        softJaw: clamp01(1 - sharpJaw),
-        cheekDefinition: clamp01((cheekWidth / Math.max(jawWidth, 0.001) - 1.12) / 0.22),
-        bigEyes: clamp01(avgEyeHeight / Math.max(faceHeight, 0.001) / 0.035),
-        eyeRoundness: clamp01((eyeRoundnessRaw - 0.22) / 0.16),
-        eyeSlenderness: clamp01((0.34 - eyeRoundnessRaw) / 0.18),
-        eyeTailUp: clamp01((eyeTailTilt + 0.006) / 0.035),
-        eyeSoftness: clamp01((1 - Math.abs(eyeTailTilt) / 0.045) * 0.55 + clamp01((eyeRoundnessRaw - 0.18) / 0.24) * 0.45),
-        wideEyeGap: clamp01((eyeGap - 0.19) / 0.16),
-        longMidface: clamp01((midface - 0.24) / 0.16),
-        smallMouth: clamp01((0.42 - mouthWidth / Math.max(faceWidth, 0.001)) / 0.16),
-        expressiveMouth: clamp01((mouthHeight / Math.max(faceHeight, 0.001)) / 0.045 + smileCurve * 0.35),
-        smileCurve,
-        mouthCornerUp: smileCurve,
-        compactFeatures: clamp01((0.66 - facialFeatureSpan) / 0.18),
-        broadFeatures: clamp01((facialFeatureSpan - 0.58) / 0.18),
-        browIntensity: clamp01((0.065 - browEyeGap) / 0.055 + sharpJaw * 0.25),
-    };
-}
-
-function calculateAnimalScores(features) {
-    const rawScores = animalProfiles.map((animal) => {
-        const weightedScore = Object.entries(animal.weights).reduce((sum, [feature, weight]) => sum + (features[feature] ?? 0.5) * weight, 0);
-        return { ...animal, rawScore: Math.max(0.04, weightedScore + 0.38) };
-    });
-    const total = rawScores.reduce((sum, animal) => sum + animal.rawScore, 0);
-    const normalized = rawScores.map((animal) => ({ ...animal, percent: Math.max(1, Math.round((animal.rawScore / total) * 100)) })).sort((a, b) => b.percent - a.percent);
-    return normalizeRoundedPercents(normalized);
-}
-
-function normalizeRoundedPercents(scores) {
-    let diff = 100 - scores.reduce((sum, score) => sum + score.percent, 0);
-    let index = 0;
-    while (diff !== 0 && scores.length) {
-        const direction = diff > 0 ? 1 : -1;
-        if (scores[index].percent + direction > 0) {
-            scores[index].percent += direction;
-            diff -= direction;
-        }
-        index = (index + 1) % scores.length;
-    }
-    return scores;
 }
 
 function renderResult({ scores, features, winner, top, partAnimals, saju, daily, weekly, symbol, userProfile }) {
@@ -444,10 +348,10 @@ function renderResult({ scores, features, winner, top, partAnimals, saju, daily,
         </div>
     `).join('');
 
-    partReading.innerHTML = renderPartAnimals(partAnimals);
-    resultDetail.innerHTML = renderPhysiognomyReport(winner, partAnimals);
-    sajuReading.innerHTML = renderSajuReport(saju);
-    integrationReading.innerHTML = renderIntegrationReport(winner, partAnimals, saju);
+    partReading.innerHTML = renderPartAnimalReport(partAnimals);
+    resultDetail.innerHTML = renderFaceReadingReport(winner, partAnimals, features);
+    sajuReading.innerHTML = renderSajuProfileReport(saju);
+    integrationReading.innerHTML = renderIntegratedReading(winner, partAnimals, saju, features);
     dailyFortune.innerHTML = renderDailyFortune(daily);
     weeklyFortune.innerHTML = renderWeeklyFortune(weekly);
     talismanCard.innerHTML = renderTalismanCard(symbol, winner, daily, userProfile);
@@ -510,142 +414,6 @@ function getUserProfile() {
     };
 }
 
-function calculatePartAnimals(features) {
-    return {
-        eyes: bestAnimalForWeights(features, ['bigEyes', 'eyeRoundness', 'eyeSlenderness', 'eyeTailUp', 'eyeSoftness', 'wideEyeGap', 'browIntensity']),
-        mouth: bestAnimalForWeights(features, ['smallMouth', 'expressiveMouth', 'smileCurve', 'mouthCornerUp']),
-        outline: bestAnimalForWeights(features, ['roundFace', 'longFace', 'wideFace', 'sharpJaw', 'softJaw', 'cheekDefinition', 'longMidface']),
-        energy: bestAnimalForWeights(features, ['eyeSoftness', 'smileCurve', 'browIntensity', 'broadFeatures', 'compactFeatures']),
-    };
-}
-
-function bestAnimalForWeights(features, allowedFeatures) {
-    return animalProfiles
-        .map((animal) => {
-            const score = Object.entries(animal.weights)
-                .filter(([feature]) => allowedFeatures.includes(feature))
-                .reduce((sum, [feature, weight]) => sum + (features[feature] ?? 0.5) * Math.max(weight, 0), 0);
-            return { ...animal, partScore: score };
-        })
-        .sort((a, b) => b.partScore - a.partScore)[0];
-}
-
-function createSajuReading(profile) {
-    if (!profile.birthDate) {
-        return {
-            element: elementProfiles.water,
-            branch: '미상',
-            daySeed: 0,
-            calendarNote: '생년월일이 없어 기본 리듬으로만 해석했습니다.',
-        };
-    }
-
-    const year = profile.birthDate.getFullYear();
-    const month = profile.birthDate.getMonth() + 1;
-    const day = profile.birthDate.getDate();
-    const seed = year * 372 + month * 31 + day + (profile.birthTime === 'unknown' ? 0 : profile.birthTime.charCodeAt(0));
-    const elementKeys = ['wood', 'fire', 'earth', 'metal', 'water'];
-    const element = elementProfiles[elementKeys[Math.abs(seed) % elementKeys.length]];
-    const branch = branchAnimals[(year - 4) % 12];
-
-    return {
-        element,
-        branch,
-        daySeed: seed,
-        calendarNote: `${profile.calendarType === 'lunar' ? '음력' : '양력'} 기준의 생년 흐름을 룰 기반으로 해석했습니다.`,
-    };
-}
-
-function createDailyFortune(winner, saju, profile) {
-    const seed = getDateSeed(new Date()) + saju.daySeed + winner.id.length;
-    const guardian = animalProfiles[seed % animalProfiles.length];
-    const keyword = saju.element.keywords[seed % saju.element.keywords.length];
-    return {
-        title: `${guardian.name}이 지키는 ${keyword}의 날`,
-        flow: pick(dailyFortuneTemplates.flow, seed),
-        relation: pick(dailyFortuneTemplates.relation, seed + 1),
-        focus: pick(dailyFortuneTemplates.focus, seed + 2),
-        emotion: pick(dailyFortuneTemplates.emotion, seed + 3),
-        money: pick(dailyFortuneTemplates.money, seed + 4),
-        caution: `${winner.name}의 ${winner.keywords[0]}이 장점이 되는 날이지만, 반응을 너무 빨리 내면 결이 거칠어질 수 있습니다.`,
-        action: `${profile.name}님에게 오늘 필요한 행동은 작은 약속 하나를 정확히 지키는 것입니다.`,
-        keyword,
-        color: pick(['연한 금빛', '짙은 남색', '안개 보라', '크림 화이트', '차분한 녹색'], seed),
-        guardian,
-        meditation: '좋은 인상은 더하려 할 때보다, 불필요한 긴장을 덜어낼 때 드러납니다.',
-    };
-}
-
-function createWeeklyFortune(winner, saju, profile) {
-    const seed = getDateSeed(getWeekStart(new Date())) + saju.daySeed;
-    const guardian = animalProfiles[(seed + 3) % animalProfiles.length];
-    return {
-        keyword: `${saju.element.keywords[(seed + 1) % saju.element.keywords.length]}과 ${winner.keywords[1]}`,
-        relation: '관계에서는 속도를 맞추는 일이 중요합니다. 먼저 설득하기보다 서로의 기준을 확인해보세요.',
-        work: `${saju.element.work} 이번 주에는 ${winner.name} 특유의 ${winner.keywords[0]}을 결과물의 첫인상으로 쓰면 좋습니다.`,
-        emotion: '감정의 흐름은 완만하지만 오래 갑니다. 사소한 피로를 무시하지 않는 것이 이번 주의 균형입니다.',
-        choice: '중요한 선택 앞에서는 빠른 확신보다 반복해서 남는 신호를 믿어보세요.',
-        avoid: '모두에게 좋은 인상을 남기려는 과한 조율은 피하는 편이 좋습니다.',
-        guardian,
-        sentence: pick(weeklySentences, seed),
-        name: profile.name,
-    };
-}
-
-function createSymbolicAnimalName(winner, saju, profile) {
-    const seed = saju.daySeed + winner.name.length + profile.name.length;
-    const prefix = guardianTitles[Math.abs(seed) % guardianTitles.length];
-    return {
-        title: `${prefix} ${winner.name.replace('상', '')}`,
-        description: `${winner.tagline}과 ${saju.element.tone}이 겹쳐, 사람들에게는 ${winner.keywords[0]}이 먼저 닿고 안쪽에는 ${saju.element.keywords[0]}의 리듬이 남습니다.`,
-    };
-}
-
-function renderPartAnimals(parts) {
-    const copy = {
-        eyes: '눈매에는',
-        mouth: '입꼬리와 웃는 인상에는',
-        outline: '얼굴선에는',
-        energy: '전체 기운에는',
-    };
-    return Object.entries(parts)
-        .map(([key, animal]) => `<div class="part-item"><strong>${partLabel(key)}: ${animal.emoji} ${animal.name}</strong><p>${copy[key]} ${animal.name} 특유의 ${animal.keywords.slice(0, 2).join('과 ')}이 강하게 나타납니다.</p></div>`)
-        .join('');
-}
-
-function renderPhysiognomyReport(winner, parts) {
-    return [
-        `<p><strong>전체 인상 총평</strong><br>당신의 얼굴은 ${winner.resultMessage} 예언처럼 단정하기보다, 현재 사진에서 읽히는 인상상의 흐름으로 보는 것이 좋습니다.</p>`,
-        `<p><strong>눈의 상</strong><br>눈에서는 ${parts.eyes.name} 계열의 ${parts.eyes.keywords[0]}이 먼저 읽힙니다. 시선의 결이 첫인상을 오래 남깁니다.</p>`,
-        `<p><strong>입의 상</strong><br>입매는 ${parts.mouth.name}의 ${parts.mouth.keywords[0]}을 띱니다. 웃는 순간 인상의 문이 열리는 타입입니다.</p>`,
-        `<p><strong>윤곽의 상</strong><br>윤곽은 ${parts.outline.name}처럼 ${parts.outline.keywords[1]}을 만들며, 가까워졌을 때 ${winner.smileCharm}</p>`,
-        `<p><strong>주의하면 좋은 습관</strong><br>좋은 인상을 더하려 하기보다 얼굴과 몸의 긴장을 덜어내면 본래의 ${winner.keywords[0]}이 더 자연스럽게 드러납니다.</p>`,
-    ].join('');
-}
-
-function renderSajuReport(saju) {
-    const element = saju.element;
-    return [
-        `<p><strong>기본 기질: ${element.name}</strong><br>${element.temperament}</p>`,
-        `<p><strong>관계의 경향</strong><br>${element.relationship}</p>`,
-        `<p><strong>일/학업/창작 태도</strong><br>${element.work}</p>`,
-        `<p><strong>돈과 소비의 기질</strong><br>${element.money}</p>`,
-        `<p><strong>휴식이 필요한 순간</strong><br>${element.rest}</p>`,
-        `<p><strong>지금 자주 마주하는 과제</strong><br>${element.challenge}</p>`,
-        `<p><strong>해석 기준</strong><br>${saju.calendarNote} 띠 흐름은 ${saju.branch}의 상징을 참고했습니다.</p>`,
-    ].join('');
-}
-
-function renderIntegrationReport(winner, parts, saju) {
-    return [
-        `<p><strong>얼굴이 먼저 말하는 것</strong><br>얼굴에서는 ${winner.name}과 ${parts.energy.name} 계열의 ${winner.keywords[0]}이 강하게 나타납니다.</p>`,
-        `<p><strong>생년 정보가 말하는 것</strong><br>생년 흐름은 ${saju.element.name}의 ${saju.element.tone}을 보여줍니다. 이는 ${saju.element.keywords.join(', ')} 같은 방향으로 해석됩니다.</p>`,
-        `<p><strong>겹치는 지점</strong><br>${winner.name}의 ${winner.keywords[1]}과 ${saju.element.name}의 ${saju.element.keywords[0]}이 만나, 사람들에게는 비교적 일관된 인상으로 남기 쉽습니다.</p>`,
-        `<p><strong>어긋나는 지점</strong><br>겉으로는 ${winner.firstImpression}처럼 보이지만, 안쪽에서는 ${saju.element.rest}</p>`,
-        `<p><strong>균형의 방향</strong><br>타인에게 보이는 나를 과하게 관리하기보다, 혼자 있을 때 회복되는 방식을 존중할 때 상과 기질이 같은 방향으로 움직입니다.</p>`,
-    ].join('');
-}
-
 function renderDailyFortune(daily) {
     return [
         ['오늘의 전체 흐름', daily.flow],
@@ -686,25 +454,6 @@ function renderTalismanCard(symbol, winner, daily, profile) {
             <em>${daily.meditation}</em>
         </div>
     `;
-}
-
-function partLabel(key) {
-    return { eyes: '눈의 상', mouth: '입의 상', outline: '윤곽의 상', energy: '전체 기운' }[key];
-}
-
-function pick(items, seed) {
-    return items[Math.abs(seed) % items.length];
-}
-
-function getDateSeed(date) {
-    return date.getFullYear() * 372 + (date.getMonth() + 1) * 31 + date.getDate();
-}
-
-function getWeekStart(date) {
-    const start = new Date(date);
-    start.setDate(date.getDate() - date.getDay());
-    start.setHours(12, 0, 0, 0);
-    return start;
 }
 
 function renderAnimalGuide() {
@@ -807,7 +556,7 @@ function saveResultCard() {
     ctx.textAlign = 'center';
     ctx.fillStyle = '#2b1c17';
     ctx.font = '72px sans-serif';
-    ctx.fillText('상의 서재', 540, 180);
+    ctx.fillText('상결', 540, 180);
     ctx.font = '180px sans-serif';
     ctx.fillText(winner.emoji, 540, 405);
     ctx.font = '86px sans-serif';
@@ -1016,24 +765,6 @@ function waitForImageReady(source) {
         source.onload = resolve;
         source.onerror = reject;
     });
-}
-
-function getBounds(landmarks) {
-    const xs = landmarks.map((point) => point.x);
-    const ys = landmarks.map((point) => point.y);
-    return { width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys) };
-}
-
-function measureEye(landmarks, points) {
-    return { width: distance(landmarks[points.outer], landmarks[points.inner]), height: distance(landmarks[points.top], landmarks[points.bottom]) };
-}
-
-function distance(a, b) {
-    return Math.hypot(a.x - b.x, a.y - b.y);
-}
-
-function clamp01(value) {
-    return Math.max(0, Math.min(1, value));
 }
 
 function delay(ms) {

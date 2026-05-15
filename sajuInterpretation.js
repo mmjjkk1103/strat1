@@ -7,9 +7,13 @@ export function renderSajuReport(saju) {
     const pillarLine = saju.pillars
         ? `년주 ${saju.pillars.year.label}, 월주 ${saju.pillars.month.label}, 일주 ${saju.pillars.day.label}, 시주 ${saju.pillars.hour?.label ?? '미상'}`
         : '생년월일 미입력으로 사주팔자 계산을 생략했습니다.';
+    const gyeokLine = saju.gyeokguk
+        ? `<p><strong>격국 · 월령의 그릇 · ${saju.gyeokguk.name}</strong><br>${saju.gyeokguk.basis} ${saju.gyeokguk.reference ? saju.gyeokguk.reference.interpretation : '이 격국은 월령이 일간과 맺는 관계를 참고해 타고난 기질의 그릇을 살피는 자리입니다.'}</p>`
+        : '';
     return [
         `<p><strong>사주팔자 · 네 기둥의 기록</strong><br>${pillarLine}</p>`,
         `<p><strong>일간 중심 기질 · ${saju.dayMaster.stem} · ${element.name}</strong><br>${element.temperament}</p>`,
+        gyeokLine,
         `<p><strong>오행 분포 · 기운의 자리</strong><br>${renderElementSpread(saju.elements)}</p>`,
         `<p><strong>음양 분포 · 드러남과 머묾</strong><br>양 ${saju.yinYang.yang} / 음 ${saju.yinYang.yin}. ${saju.yinYang.yang >= saju.yinYang.yin ? '밖으로 움직이는 결이 조금 더 앞섭니다.' : '안쪽에서 살피고 축적하는 결이 조금 더 깊습니다.'}</p>`,
         `<p><strong>관계의 경향 · 인연의 문</strong><br>${element.relationship}</p>`,

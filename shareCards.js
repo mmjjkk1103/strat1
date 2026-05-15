@@ -10,7 +10,8 @@ export function createShareSummaries(result) {
     const name = userProfile.name;
     const oneLine = `${name}의 상에는 눈의 ${plainAnimal(partAnimals.eyes)}, 입가의 ${plainAnimal(partAnimals.mouth)}이 함께 머뭅니다. 타고난 결은 ${saju.element.name}의 ${saju.element.keywords[0]}에 닿아 있고, 오늘은 ${daily.keyword}의 기운이 길을 엽니다.`;
     const face = `${name}의 얼굴은 ${winner.name}의 결이 가장 앞섭니다. 눈에는 ${partAnimals.eyes.keywords[0]}이, 입가에는 ${partAnimals.mouth.keywords[0]}이 머물러 사람의 마음을 밀어붙이기보다 곁에 머물게 하는 상으로 읽힙니다.`;
-    const sajuText = `${name}의 일간은 ${saju.dayMaster.stem}(${saju.element.name})입니다. 겉으로 드러나는 말보다 안쪽에서 익어가는 생각이 힘이 되며, 이번 주에는 ${saju.element.keywords[0]}의 결을 가지런히 할수록 운이 바르게 섭니다.`;
+    const gyeokText = saju.gyeokguk?.name ? `${saju.gyeokguk.name}의 그릇 위에 ` : '';
+    const sajuText = `${name}의 일간은 ${saju.dayMaster.stem}(${saju.element.name})입니다. ${gyeokText}겉으로 드러나는 말보다 안쪽에서 익어가는 생각이 힘이 되며, 이번 주에는 ${saju.element.keywords[0]}의 결을 가지런히 할수록 운이 바르게 섭니다.`;
     const today = `오늘의 수호 동물은 ${daily.guardian.name}. ${daily.flow} 행운의 말은 ${daily.keyword}, 오늘의 한 문장은 "${daily.meditation}"입니다.`;
 
     return { oneLine, face, saju: sajuText, daily: today };
@@ -139,8 +140,8 @@ function getCardPayload(type, result) {
             seal: saju.dayMaster.stem,
             rows: [
                 { label: '일간', value: `${saju.dayMaster.stem} · ${saju.element.name}` },
+                { label: '격국', value: saju.gyeokguk?.name ?? '월령 미상' },
                 { label: '오행', value: elementSpread(saju.elements) },
-                { label: '기질', value: saju.element.temperament },
                 { label: '이번 주 기운', value: weekly.keyword },
             ],
             quote: weekly.sentence,

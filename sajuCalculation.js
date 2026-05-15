@@ -1,11 +1,16 @@
 import { branchAnimals, elementProfiles } from './reading-data.js';
+import { getGyeokFaceReference } from './gyeokguk-data.js';
 
 const stems = ['갑', '을', '병', '정', '무', '기', '경', '신', '임', '계'];
 const branches = ['자', '축', '인', '묘', '진', '사', '오', '미', '신', '유', '술', '해'];
 const stemElements = ['wood', 'wood', 'fire', 'fire', 'earth', 'earth', 'metal', 'metal', 'water', 'water'];
 const branchElements = ['water', 'earth', 'wood', 'wood', 'earth', 'fire', 'fire', 'earth', 'metal', 'metal', 'earth', 'water'];
-const yinYang = ['yang', 'yin', 'yang', 'yin', 'yang', 'yin', 'yang', 'yin', 'yang', 'yin'];
+const stemYinYang = ['yang', 'yin', 'yang', 'yin', 'yang', 'yin', 'yang', 'yin', 'yang', 'yin'];
+const branchYinYang = ['yang', 'yin', 'yang', 'yin', 'yang', 'yin', 'yang', 'yin', 'yang', 'yin', 'yang', 'yin'];
 const monthBranches = ['인', '묘', '진', '사', '오', '미', '신', '유', '술', '해', '자', '축'];
+const elementLabels = { wood: '목', fire: '화', earth: '토', metal: '금', water: '수' };
+const generates = { wood: 'fire', fire: 'earth', earth: 'metal', metal: 'water', water: 'wood' };
+const controls = { wood: 'earth', fire: 'metal', earth: 'water', metal: 'wood', water: 'fire' };
 const branchAlias = {
     子: '자', 丑: '축', 寅: '인', 卯: '묘', 辰: '진', 巳: '사',
     午: '오', 未: '미', 申: '신', 酉: '유', 戌: '술', 亥: '해',
@@ -25,6 +30,7 @@ export function createSajuProfile(profile) {
             elements: { wood: 0, fire: 0, earth: 0, metal: 0, water: 0 },
             yinYang: { yin: 0, yang: 0 },
             dayMaster: { stem: '계', elementKey: 'water', element: elementProfiles.water, yinYang: 'yin' },
+            gyeokguk: null,
             calendarNote: '생년월일이 없어 기본 리듬으로만 해석했습니다.',
             engineNote: '사주 계산 엔진은 모듈화되어 있으며, 추후 정밀 만세력 라이브러리로 교체할 수 있습니다.',
         };
@@ -55,6 +61,7 @@ export function createSajuProfile(profile) {
     };
     const dominantElementKey = Object.entries(elements).sort((a, b) => b[1] - a[1])[0][0];
     const seed = year * 372 + (date.getMonth() + 1) * 31 + date.getDate() + (hourBranchIndex ?? 0) * 17 + dayIndex;
+    const gyeokguk = createGyeokgukProfile(dayMaster, pillars.month);
 
     return {
         element: elementProfiles[dayMaster.elementKey],
@@ -65,6 +72,7 @@ export function createSajuProfile(profile) {
         yinYang: yinYangBalance,
         dayMaster,
         dominantElement: elementProfiles[dominantElementKey],
+        gyeokguk,
         calendarNote: `${profile.calendarType === 'lunar' ? '음력 입력값' : '양력'} 기준으로 계산했습니다. 현재 정적 버전은 절기 월주와 간지 일주를 자체 계산하며, 음력-양력 변환은 정밀 만세력 연동 시 보강됩니다.`,
         engineNote: 'npm 번들러가 없는 정적 사이트라 manseryeok/@gracefullight/saju 대신 교체 가능한 자체 계산 모듈을 적용했습니다.',
     };
@@ -81,9 +89,36 @@ function makePillarFromParts(stemIndex, branchIndex) {
         label: `${stems[stemIndex]}${branches[branchIndex]}`,
         stemElement: stemElements[stemIndex],
         branchElement: branchElements[branchIndex],
-        stemYinYang: yinYang[stemIndex],
-        branchYinYang: yinYang[branchIndex],
+        stemYinYang: stemYinYang[stemIndex],
+        branchYinYang: branchYinYang[branchIndex],
     };
+}
+
+function createGyeokgukProfile(dayMaster, monthPillar) {
+    const tenGod = getTenGod(dayMaster, {
+        elementKey: monthPillar.branchElement,
+        yinYang: monthPillar.branchYinYang,
+    });
+    const name = `${tenGod}격`;
+    const reference = getGyeokFaceReference(name);
+    return {
+        name,
+        tenGod,
+        monthBranch: monthPillar.branch,
+        monthElement: monthPillar.branchElement,
+        basis: `월지 ${monthPillar.branch}(${elementLabels[monthPillar.branchElement]})를 일간 ${dayMaster.stem} 기준으로 보았습니다.`,
+        reference,
+    };
+}
+
+function getTenGod(dayMaster, target) {
+    const samePolarity = dayMaster.yinYang === target.yinYang;
+    if (target.elementKey === dayMaster.elementKey) return samePolarity ? '비견' : '겁재';
+    if (generates[target.elementKey] === dayMaster.elementKey) return samePolarity ? '편인' : '정인';
+    if (generates[dayMaster.elementKey] === target.elementKey) return samePolarity ? '식신' : '상관';
+    if (controls[dayMaster.elementKey] === target.elementKey) return samePolarity ? '편재' : '정재';
+    if (controls[target.elementKey] === dayMaster.elementKey) return samePolarity ? '편관' : '정관';
+    return '미정';
 }
 
 function getSajuYear(date) {

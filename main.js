@@ -54,6 +54,7 @@ const scoreList = document.getElementById('score-list');
 const resultDetail = document.getElementById('result-detail');
 const partReading = document.getElementById('part-reading');
 const sajuReading = document.getElementById('saju-reading');
+const gyeokReading = document.getElementById('gyeok-reading');
 const integrationReading = document.getElementById('integration-reading');
 const dailyFortune = document.getElementById('daily-fortune');
 const weeklyFortune = document.getElementById('weekly-fortune');
@@ -360,6 +361,7 @@ function renderResult({ scores, features, winner, top, partAnimals, saju, daily,
     partReading.innerHTML = renderPartAnimalReport(partAnimals);
     resultDetail.innerHTML = renderFaceReadingReport(winner, partAnimals, features);
     sajuReading.innerHTML = renderSajuProfileReport(saju);
+    gyeokReading.innerHTML = renderGyeokReference(saju, partAnimals);
     integrationReading.innerHTML = renderIntegratedReading(winner, partAnimals, saju, features);
     dailyFortune.innerHTML = renderDailyFortune(daily);
     weeklyFortune.innerHTML = renderWeeklyFortune(weekly);
@@ -382,6 +384,26 @@ function renderResult({ scores, features, winner, top, partAnimals, saju, daily,
             bar.style.width = bar.dataset.width;
         });
     });
+}
+
+function renderGyeokReference(saju, partAnimals) {
+    if (!saju.gyeokguk) {
+        return '<p><strong>격국 참고</strong><br>생년월일이 없으면 월령의 그릇을 따로 세우지 않습니다. 태어난 날을 더하면 사주의 격국과 관상의 접점을 함께 살필 수 있습니다.</p>';
+    }
+    const { gyeokguk } = saju;
+    if (!gyeokguk.reference) {
+        return `
+            <p><strong>${gyeokguk.name} · 월령의 그릇</strong><br>${gyeokguk.basis} 현재 제공된 연구 자료는 정인격과 식신격을 중심으로 정리되어, 이 격국은 기본 사주 리포트 안에서만 참고합니다.</p>
+            <p><strong>관상과의 대조</strong><br>사진에서는 눈의 상이 ${partAnimals.eyes.name}, 입의 상이 ${partAnimals.mouth.name}, 윤곽의 상이 ${partAnimals.outline.name}으로 읽혔습니다. 이후 격국별 자료가 늘어나면 이 자리에 더 정밀한 대조가 더해집니다.</p>
+        `;
+    }
+    const reference = gyeokguk.reference;
+    const traits = reference.traits.slice(0, 4).map(([label, value]) => `${label} ${value}`).join(' · ');
+    return `
+        <p><strong>${reference.name} · ${reference.title}</strong><br>${gyeokguk.basis} ${reference.interpretation}</p>
+        <p><strong>연구에서 본 얼굴의 결</strong><br>${traits}</p>
+        <p><strong>현재 리포트와의 접점</strong><br>사진에서는 눈의 상이 ${partAnimals.eyes.name}, 입의 상이 ${partAnimals.mouth.name}, 윤곽의 상이 ${partAnimals.outline.name}으로 읽혔습니다. 격국의 경향과 실제 얼굴 특징이 겹치는 지점을 참고 자료로 비춰봅니다.</p>
+    `;
 }
 
 function buildFeatureComments(winner, top, features) {

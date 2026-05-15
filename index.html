@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google-adsense-account" content="ca-pub-1003771485403609">
-    <meta name="description" content="얼굴 사진과 생년월일을 바탕으로 동물상, 관상 리포트, 사주풍 기질, 오늘과 이번 주 운세를 함께 읽어주는 자기탐색형 디지털 운세 웹서비스입니다.">
+    <meta name="description" content="얼굴 사진과 생년월일을 바탕으로 동물상, 관상 리포트, 사주팔자, 오늘과 이번 주의 흐름을 함께 읽어주는 AI 관상·사주 리포트 서비스입니다.">
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-GXK4SK1ETN"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
@@ -52,7 +52,7 @@
                     <a class="button button-secondary" href="#start-test">오늘의 운세 먼저 보기</a>
                 </div>
                 <div class="trust-badges" aria-label="서비스 특징">
-                    <span>얼굴 이미지 분석</span>
+                    <span>얼굴 이미지 리딩</span>
                     <span>생년월일 기반 해석</span>
                     <span>오늘·이번 주 운세</span>
                     <span>결과 카드 저장</span>
@@ -60,7 +60,7 @@
             </div>
             <div class="hero-visual" aria-hidden="true">
                 <div class="ritual-ring"></div>
-                <div class="floating-card card-a"><span>FACE</span><strong>인상 분석</strong></div>
+                <div class="floating-card card-a"><span>FACE</span><strong>얼굴의 상</strong></div>
                 <div class="floating-card card-b"><span>SAJU</span><strong>사주 흐름</strong></div>
                 <div class="floating-card card-c"><span>DAY</span><strong>오늘 운세</strong></div>
                 <div class="hero-orbit">相</div>
@@ -77,7 +77,7 @@
             <div class="section-heading">
                 <p class="eyebrow">Soft ritual</p>
                 <h2 id="tester-title">사진과 생년의 흐름을 함께 준비하세요</h2>
-                <p>얼굴 이미지는 브라우저 안에서 분석되며, 입력 정보는 현재 화면의 리포트 생성에만 사용됩니다.</p>
+                <p>얼굴 이미지는 브라우저 안에서만 읽히며, 입력 정보는 현재 화면의 운세첩을 펼치는 데만 사용됩니다.</p>
             </div>
 
             <div class="tester-grid">
@@ -116,7 +116,7 @@
 
                     <div class="analyze-bar">
                         <button id="analyze-button" class="button button-primary button-wide" type="button">나의 상 읽기</button>
-                        <p id="status-message" class="status-message" aria-live="polite">얼굴 이미지는 저장되지 않으며, 브라우저 내 분석에만 사용됩니다. 이름과 생년 정보도 서버로 전송하지 않습니다.</p>
+                        <p id="status-message" class="status-message" aria-live="polite">얼굴 이미지는 저장되지 않으며, 브라우저 안에서만 상을 읽습니다. 이름과 생년 정보도 서버로 전송하지 않습니다.</p>
                     </div>
                 </section>
 
@@ -188,9 +188,9 @@
             <section id="result-panel" class="result-panel" hidden aria-live="polite">
                 <div id="winner-card" class="winner-card"></div>
                 <div class="result-actions">
-                    <button id="save-card" class="button button-primary" type="button">결과 카드 저장</button>
+                    <button id="save-card" class="button button-primary" type="button">종합 카드 저장</button>
                     <button id="copy-link" class="button button-secondary" type="button">링크 복사</button>
-                    <button id="share-result" class="button button-secondary" type="button">공유하기</button>
+                    <button id="share-result" class="button button-secondary" type="button">리포트 공유</button>
                     <button id="compare-toggle" class="button button-ghost" type="button">친구와 비교하기</button>
                 </div>
 
@@ -248,6 +248,38 @@
                     </article>
                 </div>
 
+                <section class="share-suite result-card" aria-labelledby="share-suite-title">
+                    <div class="share-suite-head">
+                        <p class="eyebrow">Share cards</p>
+                        <h3 id="share-suite-title">저장하고 나눌 수 있는 운세첩</h3>
+                        <p>분석 결과를 네 가지 카드와 짧은 공유 문장으로 정리했습니다. 카드에는 얼굴의 상, 태어난 날의 결, 오늘의 흐름만 간결하게 담깁니다.</p>
+                    </div>
+                    <div class="download-grid" aria-label="결과 카드 저장">
+                        <button class="download-card" type="button" data-card-type="summary"><span>綜</span><strong>종합 상 리포트</strong><small>대표 동물상 · 관상 · 사주 · 오늘의 운</small></button>
+                        <button class="download-card" type="button" data-card-type="face"><span>相</span><strong>관상 리포트</strong><small>눈의 상 · 입의 상 · 윤곽의 상</small></button>
+                        <button class="download-card" type="button" data-card-type="saju"><span>柱</span><strong>사주 리포트</strong><small>사주팔자 · 오행 · 이번 주의 결</small></button>
+                        <button class="download-card" type="button" data-card-type="daily"><span>日</span><strong>오늘의 운세</strong><small>수호 동물 · 행운 키워드 · 오늘의 글귀</small></button>
+                    </div>
+                    <div class="share-summary-box">
+                        <div>
+                            <strong>공유용 한 줄</strong>
+                            <p id="share-one-line">결과를 만들면 이곳에 공유 문장이 펼쳐집니다.</p>
+                        </div>
+                        <div class="share-copy-actions" aria-label="리포트 공유">
+                            <button class="button button-primary" type="button" data-share-report="summary">종합 리포트 공유</button>
+                            <button class="button button-secondary" type="button" data-share-report="face">관상 리포트 공유</button>
+                            <button class="button button-secondary" type="button" data-share-report="saju">사주 리포트 공유</button>
+                            <button class="button button-secondary" type="button" data-share-report="daily">오늘의 운세 공유</button>
+                        </div>
+                        <div class="share-copy-actions">
+                            <button class="button button-secondary" type="button" data-copy-summary="oneLine">한 줄 결과 복사</button>
+                            <button class="button button-secondary" type="button" data-copy-summary="face">관상 요약 복사</button>
+                            <button class="button button-secondary" type="button" data-copy-summary="saju">사주 요약 복사</button>
+                            <button class="button button-secondary" type="button" data-copy-summary="daily">오늘의 운세 복사</button>
+                        </div>
+                    </div>
+                </section>
+
                 <section id="compare-panel" class="compare-panel" hidden aria-labelledby="compare-title">
                     <div class="section-heading compact">
                         <p class="eyebrow">Compare</p>
@@ -271,7 +303,7 @@
                             <canvas id="compare-overlay" class="analysis-overlay" aria-hidden="true"></canvas>
                             <div id="compare-badge" class="analysis-badge" hidden>얼굴 1명 감지 완료</div>
                         </div>
-                        <button id="analyze-compare" class="button button-primary" type="button">친구 결과 분석</button>
+                        <button id="analyze-compare" class="button button-primary" type="button">친구의 상 읽기</button>
                     </div>
                     <div id="compare-result" class="compare-result"></div>
                 </section>
@@ -327,7 +359,7 @@
     <footer class="site-footer">
         <div>
             <strong>상결</strong>
-            <p>얼굴의 상, 생년의 흐름, 오늘의 기운을 현대적인 자기탐색 리포트로 읽어드립니다.</p>
+            <p>얼굴의 상, 생년의 흐름, 오늘의 기운을 한 장의 운세첩처럼 읽어드립니다.</p>
         </div>
         <nav aria-label="푸터 링크">
             <a href="about.html">서비스 소개</a>

@@ -21,26 +21,26 @@ export function renderPartAnimals(parts) {
 
 export function renderPhysiognomyReport(winner, parts, features) {
     const tags = extractFeatureTags(features);
-    const eyeTone = tags.softEyes ? '부드럽고 경계를 낮추는 눈매' : tags.sharpEyes ? '선명하고 방향성이 강한 눈매' : '차분하게 균형 잡힌 눈매';
-    const mouthTone = tags.smilingMouth ? '입꼬리의 상승감이 밝은 인상을 만듭니다' : tags.smallMouth ? '입매가 조심스럽고 단정하게 읽힙니다' : '입의 폭과 표정감이 자연스럽게 드러납니다';
-    const outlineTone = tags.sharpJaw ? '윤곽은 또렷하고 결단력 있는 인상으로 읽힙니다' : tags.groundedFace ? '윤곽은 안정적이고 묵직한 분위기를 줍니다' : '윤곽은 강하게 압도하기보다 완만하게 남습니다';
+    const eyeTone = tags.softEyes ? '눈빛은 물처럼 부드럽게 머뭅니다' : tags.sharpEyes ? '눈매 끝에는 바람처럼 선명한 방향이 서 있습니다' : '눈빛은 한쪽으로 치우치지 않고 잔잔히 놓입니다';
+    const mouthTone = tags.smilingMouth ? '입꼬리에는 봄볕 같은 밝음이 서려 있습니다' : tags.smallMouth ? '입매는 말을 아끼듯 단정히 닫혀 있습니다' : '입가에는 표정의 결이 자연스럽게 드러납니다';
+    const outlineTone = tags.sharpJaw ? '윤곽은 칼끝처럼 또렷해 결단의 기운을 남깁니다' : tags.groundedFace ? '윤곽은 흙처럼 안정되어 묵직한 기운을 줍니다' : '윤곽은 강하게 밀어붙이기보다 완만한 여백을 남깁니다';
     return [
-        `<p><strong>전체 인상 총평</strong><br>당신의 얼굴은 ${winner.resultMessage} 단정적 예언이라기보다, 현재 사진에서 읽히는 인상상의 흐름으로 보는 것이 좋습니다.</p>`,
-        `<p><strong>눈의 상</strong><br>${eyeTone}가 먼저 읽힙니다. 이 흐름 때문에 ${parts.eyes.name} 계열의 ${parts.eyes.keywords[0]}이 강하게 나타납니다.</p>`,
-        `<p><strong>입의 상</strong><br>${mouthTone}. 가까워질수록 ${parts.mouth.name} 특유의 ${parts.mouth.keywords[0]}이 편안하게 살아납니다.</p>`,
-        `<p><strong>얼굴 윤곽의 상</strong><br>${outlineTone}. ${parts.outline.name}처럼 ${parts.outline.keywords[1]}을 만드는 쪽입니다.</p>`,
-        `<p><strong>첫인상</strong><br>${winner.firstImpression}처럼 보이기 쉽습니다. 사진 속 상은 ${winner.keywords.slice(0, 2).join('과 ')}을 먼저 전달합니다.</p>`,
-        `<p><strong>가까워졌을 때 드러나는 매력</strong><br>${winner.smileCharm}</p>`,
-        `<p><strong>관계에서 읽히는 분위기</strong><br>${winner.mood} 좋은 인상을 더하려 하기보다 얼굴과 몸의 긴장을 덜어낼 때 본래의 결이 더 자연스럽게 드러납니다.</p>`,
+        `<p><strong>전체 인상 총평 · 얼굴에 머문 결</strong><br>${winner.resultMessage} 이는 정해진 운명이라기보다, 지금 사진 위에 드러난 상의 흐름으로 읽는 편이 좋습니다.</p>`,
+        `<p><strong>눈의 상 · 마음이 먼저 비치는 자리</strong><br>${eyeTone}. 이 흐름 때문에 ${parts.eyes.name} 계열의 ${parts.eyes.keywords[0]}이 앞에 놓입니다.</p>`,
+        `<p><strong>입의 상 · 인연이 드나드는 문</strong><br>${mouthTone}. 가까워질수록 ${parts.mouth.name} 특유의 ${parts.mouth.keywords[0]}이 편안히 살아납니다.</p>`,
+        `<p><strong>얼굴 윤곽의 상 · 기운을 담는 그릇</strong><br>${outlineTone}. ${parts.outline.name}처럼 ${parts.outline.keywords[1]}의 그릇을 만드는 쪽입니다.</p>`,
+        `<p><strong>첫인상 · 문 앞의 기운</strong><br>${winner.firstImpression}처럼 읽히기 쉽습니다. 사진 속 상은 ${winner.keywords.slice(0, 2).join('과 ')}을 먼저 전합니다.</p>`,
+        `<p><strong>가까워졌을 때 드러나는 매력 · 안쪽의 빛</strong><br>${winner.smileCharm}</p>`,
+        `<p><strong>관계에서 읽히는 분위기 · 머무는 온도</strong><br>${winner.mood} 좋은 인상을 더하려 애쓰기보다 몸과 얼굴의 긴장을 덜어낼 때 본래의 결이 맑아집니다.</p>`,
     ].join('');
 }
 
 function buildPartReason(key, animal) {
     const copy = {
-        eyes: `눈매 관련 특징값을 따로 계산했을 때 ${animal.name} 특유의 ${animal.keywords.slice(0, 2).join('과 ')}이 강하게 나타났습니다.`,
-        mouth: `입 너비와 입꼬리 상승 정도를 중심으로 보면 ${animal.name}의 ${animal.keywords[0]}이 잘 읽힙니다.`,
-        outline: `얼굴 가로세로 비율, 광대 폭, 턱선 지표가 ${animal.name} 계열의 ${animal.keywords[1]}으로 이어집니다.`,
-        energy: `눈·입·윤곽의 가공 지표를 합치면 종합적으로 ${animal.name}의 ${animal.keywords[0]}이 가장 앞섭니다.`,
+        eyes: `눈의 크기와 꼬리의 방향을 따로 살피면 ${animal.name} 특유의 ${animal.keywords.slice(0, 2).join('과 ')}이 먼저 떠오릅니다.`,
+        mouth: `입 너비와 입꼬리의 흐름을 중심으로 보면 ${animal.name}의 ${animal.keywords[0]}이 입가에 머뭅니다.`,
+        outline: `얼굴의 비율, 광대의 폭, 턱선의 각도가 ${animal.name} 계열의 ${animal.keywords[1]}으로 이어집니다.`,
+        energy: `눈·입·윤곽의 결을 함께 놓고 보면 종합적으로 ${animal.name}의 ${animal.keywords[0]}이 앞섭니다.`,
     };
     return copy[key];
 }

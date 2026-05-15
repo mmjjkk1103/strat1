@@ -8,15 +8,16 @@ import { createSymbolicAnimalName as createSajuSymbol, renderSajuReport as rende
 import { createDailyFortune as createRuleDailyFortune } from './dailyFortune.js';
 import { createWeeklyFortune as createRuleWeeklyFortune } from './weeklyFortune.js';
 import { renderIntegrationReport as renderIntegratedReading } from './integratedReading.js';
+import { copyText, createShareSummaries, downloadReportCard, shareReport } from './shareCards.js';
 
 const animalById = Object.fromEntries(animalProfiles.map((animal) => [animal.id, animal]));
 const validImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
 const loadingSteps = [
-    '얼굴의 윤곽을 살펴보고 있습니다...',
-    '눈과 입에 머문 인상을 읽고 있습니다...',
-    '생년월일의 흐름을 조합하고 있습니다...',
-    '오늘의 기운과 당신의 상을 맞춰보고 있습니다...',
-    '해석을 완성했습니다.',
+    '눈과 입가에 머문 결을 살피고 있습니다...',
+    '얼굴의 윤곽과 기운의 방향을 맞추고 있습니다...',
+    '태어난 날의 흐름을 사주팔자에 얹고 있습니다...',
+    '오늘의 기운과 당신의 상을 겹쳐 읽고 있습니다...',
+    '운세첩을 가지런히 펼쳤습니다.',
 ];
 
 const themeButtons = document.querySelectorAll('.theme-toggle');
@@ -63,6 +64,10 @@ const quizResult = document.getElementById('quiz-result');
 const saveCardButton = document.getElementById('save-card');
 const copyLinkButton = document.getElementById('copy-link');
 const shareResultButton = document.getElementById('share-result');
+const shareOneLine = document.getElementById('share-one-line');
+const downloadCardButtons = document.querySelectorAll('[data-card-type]');
+const copySummaryButtons = document.querySelectorAll('[data-copy-summary]');
+const shareReportButtons = document.querySelectorAll('[data-share-report]');
 const compareToggle = document.getElementById('compare-toggle');
 const comparePanel = document.getElementById('compare-panel');
 const compareModeInput = document.getElementById('compare-mode');
@@ -132,6 +137,9 @@ function bindEvents() {
     saveCardButton.addEventListener('click', saveResultCard);
     copyLinkButton.addEventListener('click', copyResultLink);
     shareResultButton.addEventListener('click', shareResult);
+    downloadCardButtons.forEach((button) => button.addEventListener('click', () => saveReportCard(button.dataset.cardType)));
+    copySummaryButtons.forEach((button) => button.addEventListener('click', () => copySummary(button.dataset.copySummary)));
+    shareReportButtons.forEach((button) => button.addEventListener('click', () => shareSelectedReport(button.dataset.shareReport)));
     compareToggle.addEventListener('click', () => {
         comparePanel.hidden = !comparePanel.hidden;
         if (!comparePanel.hidden) comparePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -158,7 +166,7 @@ function setTheme(theme) {
 function handleImageFile(file, target) {
     if (!file) return;
     if (!validImageTypes.includes(file.type)) {
-        showStatus('jpg, jpeg, png, webp 형식의 사진을 업로드해주세요.', true);
+        showStatus('jpg, jpeg, png, webp 형식의 사진만 운세첩에 올릴 수 있습니다.', true);
         return;
     }
 
@@ -172,7 +180,7 @@ function handleImageFile(file, target) {
         compareImage.src = imageURL;
         comparePreview.hidden = false;
         compareResult.innerHTML = '';
-        showStatus('친구 사진이 준비되었습니다. 친구 결과 분석을 눌러주세요.', false);
+        showStatus('비교할 얼굴이 준비되었습니다. 친구의 상도 펼쳐보세요.', false);
         return;
     }
 
@@ -184,7 +192,7 @@ function handleImageFile(file, target) {
     imagePreview.src = imageURL;
     previewPanel.hidden = false;
     cameraPanel.hidden = true;
-    showStatus('사진이 준비되었습니다. AI 분석 시작을 눌러주세요.', false);
+    showStatus('얼굴이 준비되었습니다. 나의 상 읽기를 눌러주세요.', false);
 }
 
 async function startCamera(target = 'main') {
@@ -205,17 +213,17 @@ async function startCamera(target = 'main') {
             audio: false,
         });
         cameraVideo.srcObject = cameraStream;
-        showStatus(target === 'compare' ? '친구 얼굴이 프레임 중앙에 들어오면 촬영해주세요.' : '얼굴이 프레임 중앙에 들어오면 촬영하기를 눌러주세요.', false);
+        showStatus(target === 'compare' ? '비교할 얼굴이 중앙에 머물면 촬영해주세요.' : '얼굴이 빛 안에 들어오면 촬영하기를 눌러주세요.', false);
     } catch (error) {
         console.error(error);
         cameraPanel.hidden = true;
-        showStatus('카메라 권한이 거부되었거나 사용할 수 없습니다. 브라우저 권한과 HTTPS 접속 상태를 확인해 주세요.', true);
+        showStatus('카메라 문이 열리지 않았습니다. 브라우저 권한과 HTTPS 접속 상태를 확인해 주세요.', true);
     }
 }
 
 function capturePhoto() {
     if (!cameraVideo.videoWidth) {
-        showStatus('카메라 화면이 준비된 뒤 다시 촬영해주세요.', true);
+        showStatus('화면이 맺힌 뒤 다시 촬영해주세요.', true);
         return;
     }
 
@@ -235,7 +243,7 @@ function capturePhoto() {
         clearAnalysisOverlay('compare');
         compareImage.src = canvas.toDataURL('image/png');
         comparePreview.hidden = false;
-        showStatus('친구 사진이 준비되었습니다. 친구 결과 분석을 눌러주세요.', false);
+        showStatus('비교할 얼굴이 준비되었습니다. 친구의 상도 펼쳐보세요.', false);
         comparePanel.hidden = false;
         comparePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
@@ -245,7 +253,7 @@ function capturePhoto() {
     clearAnalysisOverlay('main');
     imagePreview.src = canvas.toDataURL('image/png');
     previewPanel.hidden = false;
-    showStatus('촬영한 사진이 준비되었습니다. AI 분석 시작을 눌러주세요.', false);
+    showStatus('촬영한 얼굴이 준비되었습니다. 나의 상 읽기를 눌러주세요.', false);
 }
 
 async function analyzeCurrentImage(target) {
@@ -255,12 +263,12 @@ async function analyzeCurrentImage(target) {
     const userProfile = getUserProfile();
 
     if (!source || (!isCompare && !capturedCanvas && !imagePreview.src) || (isCompare && !compareCanvas && !compareImage.src)) {
-        showStatus(isCompare ? '비교할 친구 사진을 먼저 준비해주세요.' : '분석할 사진을 먼저 준비해주세요.', true);
+        showStatus(isCompare ? '비교할 얼굴을 먼저 올려주세요.' : '상을 읽을 얼굴 사진을 먼저 올려주세요.', true);
         return;
     }
 
     if (!isCompare && !userProfile.birthDate) {
-        showStatus('생년월일을 입력하면 관상과 생년 흐름을 함께 읽을 수 있습니다.', true);
+        showStatus('태어난 날을 더하면 얼굴의 상과 생년의 결을 함께 읽을 수 있습니다.', true);
         birthDateInput.focus();
         return;
     }
@@ -301,11 +309,11 @@ async function analyzeCurrentImage(target) {
             resultPanel.hidden = false;
             comparePanel.hidden = false;
             comparePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            showStatus('친구 결과 분석이 완료되었습니다.', false);
+            showStatus('친구의 상도 함께 펼쳤습니다.', false);
         } else {
             currentResult = analysis;
             renderResult(analysis);
-            showStatus('분석이 완료되었습니다. 결과 카드를 저장하거나 친구와 비교해보세요.', false);
+            showStatus('운세첩이 완성되었습니다. 카드로 저장하거나 나누어보세요.', false);
         }
     } catch (error) {
         console.error(error);
@@ -317,20 +325,21 @@ async function analyzeCurrentImage(target) {
 }
 
 function renderResult({ scores, features, winner, top, partAnimals, saju, daily, weekly, symbol, userProfile }) {
+    const shareSummaries = createShareSummaries({ winner, partAnimals, saju, daily, userProfile });
     winnerCard.innerHTML = `
         <div class="winner-main">
             <div class="winner-emoji">${winner.emoji}</div>
-            <p class="winner-label">당신의 대표 동물상</p>
-            <h2>당신은 ${winner.name}입니다</h2>
-            <p class="winner-percent">가장 높은 일치도 ${winner.percent}%</p>
-            <p class="winner-message">${symbol.title}. ${winner.tagline}. ${winner.resultMessage}</p>
+            <p class="winner-label">대표로 드러난 상</p>
+            <h2>${userProfile.name}의 상은 ${winner.name}</h2>
+            <p class="winner-percent">가장 깊게 닿은 결 ${winner.percent}%</p>
+            <p class="winner-message">${symbol.title}. ${winner.resultMessage}</p>
             <div class="keyword-row">${winner.keywords.map((keyword) => `<span>${keyword}</span>`).join('')}</div>
         </div>
     `;
 
     const comments = buildFeatureComments(winner, top, features);
     featureComments.innerHTML = comments.slice(0, 3).map((comment) => `<p>${comment}</p>`).join('');
-    featureSummary.textContent = `이러한 특징이 ${top.map((animal) => animal.name).join('·')} 계열 점수를 높였습니다.`;
+    featureSummary.textContent = `이 결들이 ${top.map((animal) => animal.name).join('·')}의 상을 앞으로 불러냈습니다.`;
 
     topThree.innerHTML = top.map((animal, index) => `
         <div class="top-item">
@@ -355,6 +364,7 @@ function renderResult({ scores, features, winner, top, partAnimals, saju, daily,
     dailyFortune.innerHTML = renderDailyFortune(daily);
     weeklyFortune.innerHTML = renderWeeklyFortune(weekly);
     talismanCard.innerHTML = renderTalismanCard(symbol, winner, daily, userProfile);
+    shareOneLine.textContent = shareSummaries.oneLine;
 
     compatibilityList.innerHTML = `
         ${winner.compat.map((id) => {
@@ -364,7 +374,7 @@ function renderResult({ scores, features, winner, top, partAnimals, saju, daily,
         <p class="combo-summary">${winner.compatText}</p>
     `;
 
-    quizResult.textContent = '질문을 선택하면 AI가 읽은 상과 내가 생각하는 분위기를 함께 비교해드립니다.';
+    quizResult.textContent = '문항을 고르면 스스로 느끼는 상과 사진에서 읽힌 상을 나란히 비춰봅니다.';
     resultPanel.hidden = false;
     resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     requestAnimationFrame(() => {
@@ -382,8 +392,8 @@ function buildFeatureComments(winner, top, features) {
         .map(([feature]) => featureLabels[feature])
         .filter(Boolean);
     const comments = [...winner.commentTemplates];
-    if (activeFeatures.length) comments.splice(1, 0, `${activeFeatures.join(', ')} 특징이 특히 두드러지게 계산됐습니다.`);
-    comments.push(`따라서 ${top.map((animal) => animal.name).join(', ')} 점수가 높게 나타났습니다.`);
+    if (activeFeatures.length) comments.splice(1, 0, `${activeFeatures.join(', ')}의 결이 사진 안에서 또렷하게 드러났습니다.`);
+    comments.push(`그래서 ${top.map((animal) => animal.name).join(', ')}의 기운이 앞자리에 놓였습니다.`);
     return comments.slice(0, 4);
 }
 
@@ -397,10 +407,10 @@ function buildComboSummary(top) {
     const softCount = ids.filter((id) => softIds.includes(id)).length;
     const activeCount = ids.filter((id) => activeIds.includes(id)).length;
 
-    if (sharpCount >= 2) return `${first.name} + ${second.name} + ${third.name} 조합은 선명한 눈매와 존재감이 중심을 이루며, 차분하지만 강한 인상이 남는 카리스마형 조합입니다.`;
-    if (softCount >= 2 && activeCount >= 1) return `${first.name} + ${second.name} + ${third.name} 조합은 밝고 친근한 인상이 강하며, 귀여움과 부드러운 분위기가 함께 나타나는 조합입니다.`;
-    if (ids.includes('horse') || ids.includes('camel')) return `${first.name} + ${second.name} + ${third.name} 조합은 시원한 비율과 차분한 분위기가 섞여 단정하고 여유로운 인상을 만듭니다.`;
-    return `${first.name} + ${second.name} + ${third.name} 조합은 한 가지 분위기에 치우치기보다 친근함, 선명함, 개성이 균형 있게 섞인 타입입니다.`;
+    if (sharpCount >= 2) return `${first.name} + ${second.name} + ${third.name}의 조합은 눈매 끝과 윤곽선에서 먼저 살아납니다. 조용히 있어도 오래 남는 상입니다.`;
+    if (softCount >= 2 && activeCount >= 1) return `${first.name} + ${second.name} + ${third.name}의 조합은 밝은 빛과 부드러운 결이 함께 놓입니다. 사람의 경계를 누그러뜨리는 상입니다.`;
+    if (ids.includes('horse') || ids.includes('camel')) return `${first.name} + ${second.name} + ${third.name}의 조합은 긴 호흡과 차분한 여백을 품습니다. 서두르지 않을수록 품이 드러납니다.`;
+    return `${first.name} + ${second.name} + ${third.name}의 조합은 한 가지 기운에 머물지 않고, 부드러움과 선명함이 번갈아 드러나는 상입니다.`;
 }
 
 function getUserProfile() {
@@ -416,17 +426,17 @@ function getUserProfile() {
 
 function renderDailyFortune(daily) {
     return [
-        ['오늘의 전체 흐름', daily.flow],
+        ['오늘의 흐름', daily.flow],
         ['관계운', daily.relation],
-        ['일/학업운', daily.focus],
+        ['일운과 학업운', daily.focus],
         ['감정운', daily.emotion],
         ['소비운', daily.money],
-        ['조심 포인트', daily.caution],
-        ['추천 행동', daily.action],
+        ['조심할 결', daily.caution],
+        ['오늘의 작은 행', daily.action],
         ['행운 키워드', daily.keyword],
         ['행운 색상', daily.color],
         ['오늘의 수호 동물', `${daily.guardian.emoji} ${daily.guardian.name}`],
-        ['오늘의 마음 수행', daily.meditation],
+        ['오늘의 한 문장', daily.meditation],
     ].map(([label, value]) => `<div class="fortune-item"><strong>${label}</strong><p>${value}</p></div>`).join('');
 }
 
@@ -454,6 +464,43 @@ function renderTalismanCard(symbol, winner, daily, profile) {
             <em>${daily.meditation}</em>
         </div>
     `;
+}
+
+async function saveReportCard(type) {
+    if (!currentResult) return;
+    await downloadReportCard(type, currentResult);
+    showStatus(`${cardTypeLabel(type)}를 저장했습니다.`, false);
+}
+
+async function copySummary(type) {
+    if (!currentResult) return;
+    const summaries = createShareSummaries(currentResult);
+    try {
+        await copyText(summaries[type]);
+        showStatus(`${summaryTypeLabel(type)}를 복사했습니다.`, false);
+    } catch (error) {
+        console.error(error);
+        showStatus('문장을 복사하지 못했습니다. 브라우저 권한을 확인해 주세요.', true);
+    }
+}
+
+async function shareSelectedReport(type) {
+    if (!currentResult) return;
+    try {
+        const shared = await shareReport(type, currentResult);
+        if (shared) showStatus(`${cardTypeLabel(type)}를 나눌 준비가 되었습니다.`, false);
+    } catch (error) {
+        console.error(error);
+        showStatus('공유를 마치지 못했습니다. 요약 복사를 이용해 주세요.', true);
+    }
+}
+
+function cardTypeLabel(type) {
+    return { summary: '종합 상 리포트 카드', face: '관상 리포트 카드', saju: '사주 리포트 카드', daily: '오늘의 운세 카드' }[type] || '결과 카드';
+}
+
+function summaryTypeLabel(type) {
+    return { oneLine: '한 줄 결과', face: '관상 요약', saju: '사주 요약', daily: '오늘의 운세' }[type] || '요약 문장';
 }
 
 function renderAnimalGuide() {
@@ -508,8 +555,8 @@ function updateQuizResult() {
     const counts = selected.reduce((map, id) => map.set(id, (map.get(id) || 0) + 1), new Map());
     const [topSelfId] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
     const selfAnimal = animalById[topSelfId];
-    const aiText = currentResult ? `AI가 본 당신은 ${currentResult.winner.name}, ` : '';
-    quizResult.textContent = `${aiText}내가 생각하는 나는 ${selfAnimal.name}에 가깝습니다. ${selfAnimal.summary}`;
+    const aiText = currentResult ? `사진에서 읽힌 상은 ${currentResult.winner.name}, ` : '';
+    quizResult.textContent = `${aiText}스스로 느끼는 결은 ${selfAnimal.name}에 가깝습니다. ${selfAnimal.summary}`;
 }
 
 function renderCompareResult() {
@@ -519,14 +566,14 @@ function renderCompareResult() {
     const mode = compareModeInput.value;
     const shared = currentResult.top.find((animal) => comparePersonResult.top.some((other) => other.id === animal.id));
     const modeText = {
-        friend: '친구 사이에서는 서로의 텐션과 회복 속도를 존중하는 것이 좋습니다.',
-        lover: '연인 사이에서는 끌림만큼 속도 조율이 중요합니다.',
-        family: '가족 사이에서는 익숙함 때문에 생략한 말을 다시 부드럽게 꺼내는 것이 좋습니다.',
-        colleague: '동료 사이에서는 역할과 기준을 분명히 할수록 좋은 조합이 됩니다.',
+        friend: '벗의 인연에서는 서로의 속도를 억지로 맞추기보다, 각자의 쉼을 인정할 때 결이 맑아집니다.',
+        lover: '연인의 인연에서는 끌림만큼 호흡이 중요합니다. 급히 다가서기보다 같은 달을 보는 시간이 필요합니다.',
+        family: '가족의 인연에서는 익숙함에 묻힌 말을 다시 곱게 꺼낼 때 막힌 기운이 풀립니다.',
+        colleague: '함께 일하는 인연에서는 역할의 선을 분명히 할수록 서로의 기운이 부딪히지 않습니다.',
     }[mode];
     const note = shared
-        ? `두 사람 모두 ${shared.name} 계열의 분위기가 일부 겹칩니다. 한 사람은 ${a.name}의 ${a.keywords[0]}이, 다른 사람은 ${b.name}의 ${b.keywords[0]}이 더 크게 나타납니다. ${modeText}`
-        : `두 사람의 1위 동물상은 다르지만, 한 사람은 ${a.name} 특유의 ${a.keywords[0]}이 강하고 다른 사람은 ${b.name} 특유의 ${b.keywords[0]}이 강해 서로 다른 매력이 보입니다. ${modeText}`;
+        ? `두 사람의 상에는 ${shared.name}의 결이 함께 머뭅니다. 한 사람은 ${a.name}의 ${a.keywords[0]}이, 다른 사람은 ${b.name}의 ${b.keywords[0]}이 더 앞에 놓입니다. ${modeText}`
+        : `두 사람의 대표 상은 다르지만, 한쪽에는 ${a.name}의 ${a.keywords[0]}이, 다른 쪽에는 ${b.name}의 ${b.keywords[0]}이 놓여 서로 다른 바람을 만듭니다. ${modeText}`;
     compareResult.innerHTML = `
         <div class="compare-cards">
             <div class="compare-person"><div class="emoji">${a.emoji}</div><strong>나: ${a.name}</strong><p>${a.percent}% · ${a.tagline}</p></div>
@@ -538,49 +585,14 @@ function renderCompareResult() {
 
 function saveResultCard() {
     if (!currentResult) return;
-    const { winner, symbol, daily, userProfile } = currentResult;
-    const canvas = document.createElement('canvas');
-    canvas.width = 1080;
-    canvas.height = 1440;
-    const ctx = canvas.getContext('2d');
-    const gradient = ctx.createLinearGradient(0, 0, 1080, 1440);
-    gradient.addColorStop(0, '#fff9eb');
-    gradient.addColorStop(0.55, '#ffd0b6');
-    gradient.addColorStop(1, '#ffc857');
-    ctx.fillStyle = gradient;
-    roundRect(ctx, 0, 0, 1080, 1440, 0);
-    ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,0.46)';
-    roundRect(ctx, 72, 72, 936, 1296, 64);
-    ctx.fill();
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#2b1c17';
-    ctx.font = '72px sans-serif';
-    ctx.fillText('상결', 540, 180);
-    ctx.font = '180px sans-serif';
-    ctx.fillText(winner.emoji, 540, 405);
-    ctx.font = '86px sans-serif';
-    ctx.fillText(symbol.title, 540, 570);
-    ctx.font = '56px sans-serif';
-    ctx.fillText(`${userProfile.name} · ${winner.name} ${winner.percent}%`, 540, 660);
-    drawWrappedText(ctx, daily.title, 540, 790, 760, 54);
-    ctx.font = '42px sans-serif';
-    drawWrappedText(ctx, symbol.description, 540, 930, 780, 54);
-    ctx.font = '38px sans-serif';
-    drawWrappedText(ctx, daily.meditation, 540, 1160, 760, 48);
-    ctx.fillText('AI physiognomy reading', 540, 1300);
-
-    const link = document.createElement('a');
-    link.download = `animal-face-${winner.id}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+    saveReportCard('summary');
 }
 
 async function copyResultLink() {
-    const text = currentResult ? `나는 ${currentResult.winner.name}! ${location.href}` : location.href;
+    const text = currentResult ? `${createShareSummaries(currentResult).oneLine}\n${location.href}` : location.href;
     try {
         await navigator.clipboard.writeText(text);
-        showStatus('결과 링크를 복사했습니다.', false);
+        showStatus('리포트 링크를 복사했습니다.', false);
     } catch (error) {
         console.error(error);
         showStatus('링크 복사에 실패했습니다. 주소창의 URL을 직접 복사해 주세요.', true);
@@ -589,28 +601,15 @@ async function copyResultLink() {
 
 async function shareResult() {
     if (!currentResult) return;
-    const shareData = {
-        title: '동물상 AI 얼굴 분석',
-        text: `나는 ${currentResult.winner.name}! 일치도 ${currentResult.winner.percent}%가 나왔어요.`,
-        url: location.href,
-    };
-    if (navigator.share) {
-        try {
-            await navigator.share(shareData);
-            return;
-        } catch (error) {
-            if (error.name === 'AbortError') return;
-            console.error(error);
-        }
-    }
-    await copyResultLink();
+    const shared = await shareReport('summary', currentResult);
+    if (shared) showStatus('관상 리포트를 나눌 준비가 되었습니다.', false);
 }
 
 function showLoading() {
     hideResult(false);
     loadingPanel.hidden = false;
     setLoadingProgress(0, loadingSteps[0]);
-    showStatus('분석 중입니다. 잠시만 기다려 주세요.', false);
+    showStatus('눈과 입가에 머문 결을 살피고 있습니다.', false);
 }
 
 function hideLoading() {
@@ -645,11 +644,11 @@ function hideResult(clear = true) {
 
 function handleAnalyzeError(error) {
     if (error.message === 'NO_FACE') {
-        showStatus('얼굴이 감지되지 않았습니다. 밝은 정면 사진으로 다시 시도해 주세요.', true);
+        showStatus('얼굴의 윤곽이 맺히지 않았습니다. 밝은 정면 사진으로 다시 시도해 주세요.', true);
     } else if (error.message === 'MULTIPLE_FACES') {
-        showStatus('여러 명의 얼굴이 감지되었습니다. 한 명만 선명하게 나온 사진을 사용해 주세요.', true);
+        showStatus('여러 얼굴의 기운이 함께 잡혔습니다. 한 명만 선명하게 나온 사진을 사용해 주세요.', true);
     } else {
-        showStatus('분석 모델을 불러오거나 결과를 계산하지 못했습니다. 네트워크 상태를 확인한 뒤 다시 시도해 주세요.', true);
+        showStatus('리포트를 펼치지 못했습니다. 네트워크 상태를 확인한 뒤 다시 시도해 주세요.', true);
     }
 }
 
@@ -724,7 +723,8 @@ function clearMainImage() {
     clearAnalysisOverlay('main');
     previewPanel.hidden = true;
     hideResult();
-    showStatus('이미지를 삭제했습니다. 새 사진을 선택해주세요.', false);
+    shareOneLine.textContent = '결과를 만들면 이곳에 공유 문장이 펼쳐집니다.';
+    showStatus('얼굴을 비웠습니다. 새 사진을 올려주세요.', false);
 }
 
 function resetTester() {
@@ -744,10 +744,11 @@ function resetTester() {
     cameraPanel.hidden = true;
     comparePanel.hidden = true;
     compareResult.innerHTML = '';
+    shareOneLine.textContent = '결과를 만들면 이곳에 공유 문장이 펼쳐집니다.';
     hideLoading();
     hideResult();
     analyzeButton.disabled = false;
-    showStatus('분석한 이미지는 저장되지 않으며, 브라우저 내 분석에만 사용됩니다.', false);
+    showStatus('얼굴 이미지는 저장되지 않으며, 브라우저 안에서만 상을 읽습니다.', false);
     document.getElementById('start-test').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -779,21 +780,4 @@ function roundRect(ctx, x, y, width, height, radius) {
     ctx.arcTo(x, y + height, x, y, radius);
     ctx.arcTo(x, y, x + width, y, radius);
     ctx.closePath();
-}
-
-function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight) {
-    const words = text.split(' ');
-    let line = '';
-    let currentY = y;
-    words.forEach((word) => {
-        const testLine = `${line}${word} `;
-        if (ctx.measureText(testLine).width > maxWidth && line) {
-            ctx.fillText(line.trim(), x, currentY);
-            line = `${word} `;
-            currentY += lineHeight;
-        } else {
-            line = testLine;
-        }
-    });
-    if (line) ctx.fillText(line.trim(), x, currentY);
 }

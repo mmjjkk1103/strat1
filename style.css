@@ -355,6 +355,62 @@ body[data-theme="dark"] .hero-visual { background: radial-gradient(circle at 50%
 .compare-person { padding: 16px; border-radius: 20px; background: var(--surface-solid); text-align: center; }
 .compare-person .emoji { font-size: 2.8rem; }
 .compare-note { margin: 0; padding: 14px; border-radius: 18px; background: var(--surface-soft); color: var(--muted); line-height: 1.6; }
+.share-suite {
+    display: grid;
+    gap: 16px;
+    padding: 22px;
+    background:
+        radial-gradient(circle at 18% 0%, rgba(216, 181, 107, 0.18), transparent 18rem),
+        var(--surface);
+}
+.share-suite-head { max-width: 720px; }
+.share-suite-head h3 { margin: 0 0 8px; font-size: clamp(1.35rem, 3vw, 1.9rem); }
+.share-suite-head p:not(.eyebrow) { margin: 0; color: var(--muted); line-height: 1.65; }
+.download-grid { display: grid; gap: 12px; }
+.download-card {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 12px;
+    align-items: center;
+    min-height: 116px;
+    padding: 16px;
+    border: 1px solid color-mix(in srgb, var(--secondary) 24%, var(--line));
+    border-radius: var(--radius);
+    background:
+        linear-gradient(145deg, rgba(255,255,255,0.76), rgba(233,222,204,0.46));
+    color: var(--text);
+    text-align: left;
+    cursor: pointer;
+    box-shadow: var(--shadow-soft);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.download-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: var(--secondary); }
+.download-card span {
+    grid-row: span 2;
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    color: #fff8ed;
+    background: linear-gradient(145deg, #17213a, #b98b4f);
+    font-family: serif;
+    font-size: 1.25rem;
+    font-weight: 900;
+}
+.download-card strong { font-size: 1.02rem; }
+.download-card small { color: var(--muted); line-height: 1.45; }
+.share-summary-box {
+    display: grid;
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--surface-solid) 78%, transparent);
+}
+.share-summary-box strong { display: block; margin-bottom: 6px; color: var(--text); }
+.share-summary-box p { margin: 0; color: var(--muted); line-height: 1.7; }
+.share-copy-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .info-grid, .animal-guide-grid, .faq-list { display: grid; gap: 14px; }
 .info-grid article { padding: 20px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-soft); }
 .info-grid span { color: var(--primary-dark); font-weight: 950; }
@@ -394,6 +450,10 @@ body[data-theme="dark"] .hero-visual { background: radial-gradient(circle at 50%
     .quick-flow { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .tester-grid { grid-template-columns: minmax(0, 1fr) 320px; }
     .result-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .share-suite { grid-column: 1 / -1; }
+    .download-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .download-card { grid-template-columns: 1fr; align-content: start; }
+    .download-card span { grid-row: auto; }
     .score-card, .detail-card { grid-column: span 1; }
     .info-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .animal-guide-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -414,6 +474,7 @@ body[data-theme="dark"] .hero-visual { background: radial-gradient(circle at 50%
     .hero-section { min-height: auto; padding-top: 36px; }
     .hero-description br { display: none; }
     .hero-actions .button, .result-actions .button, .compare-inputs .button { width: 100%; }
+    .share-copy-actions .button { width: 100%; }
     .hero-visual { min-height: 240px; }
     .floating-card { width: 108px; min-height: 108px; }
     .card-c { left: 18%; }

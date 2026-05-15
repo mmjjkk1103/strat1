@@ -360,6 +360,37 @@
             <p class="research-source">참고 자료: 이희경, 「격국론과 관상학의 상관관계에 관한 연구 - 정인격과 식신격의 얼굴중심으로」, 공주대학교 대학원 동양학과 석사학위논문, 2018.</p>
         </section>
 
+        <section class="content-section research-section" aria-labelledby="manse-title">
+            <div class="section-heading">
+                <p class="eyebrow">Calendar note</p>
+                <h2 id="manse-title">한국 만세력 기준</h2>
+                <p>상결의 사주 해석은 한국 음력과 24절기 기준을 중요하게 봅니다. 현재 정적 버전은 자체 계산 모듈을 사용하지만, 기준 설명과 향후 정밀 계산 기준은 @fullstackfamily/manseryeok v1.0.8 정보를 반영했습니다.</p>
+            </div>
+            <div class="research-grid">
+                <article class="research-card">
+                    <span>曆</span>
+                    <h3>한국 음력 데이터</h3>
+                    <p>한국 음력은 윤달 위치와 시간 기준이 중국 음력 라이브러리와 달라질 수 있습니다. 정확한 한국 사주 해석을 위해서는 한국천문연구원(KASI) 음양력변환계산 데이터를 기준으로 삼는 것이 중요합니다.</p>
+                    <ul class="trait-list">
+                        <li>1900년부터 2050년까지 한국 음력 데이터 지원</li>
+                        <li>양력-음력 변환과 윤달 처리 기준 참고</li>
+                        <li>한국 표준시와 진태양시 보정 기준 참고</li>
+                    </ul>
+                </article>
+                <article class="research-card">
+                    <span>節</span>
+                    <h3>절기 기준 사주 계산</h3>
+                    <p>사주에서 년주는 입춘을 기준으로 바뀌고, 월주는 음력 월초가 아니라 24절기 기준으로 바뀝니다. 특히 월주 계산은 성향 해석의 기준이 되므로 절기 경계를 정확히 보는 것이 중요합니다.</p>
+                    <ul class="trait-list">
+                        <li>입춘 기준 년주 계산</li>
+                        <li>24절기 기준 월주 계산</li>
+                        <li>60갑자와 12지지 동물, 오행 매핑 참고</li>
+                    </ul>
+                </article>
+            </div>
+            <p class="research-source">참고 기준: @fullstackfamily/manseryeok v1.0.8, 한국천문연구원(KASI) 음양력변환계산 데이터 기반.</p>
+        </section>
+
         <section id="animal-guide" class="content-section" aria-labelledby="animal-guide-title">
             <div class="section-heading">
                 <p class="eyebrow">Animal book</p>

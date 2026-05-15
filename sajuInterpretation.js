@@ -1,4 +1,5 @@
 import { guardianTitles } from './reading-data.js';
+import { renderManseryeokReferenceBlock } from './manseryeok-data.js';
 
 const elementLabels = { wood: '목', fire: '화', earth: '토', metal: '금', water: '수' };
 const elementPlain = {
@@ -99,6 +100,7 @@ export function renderSajuReport(saju) {
         reportBlock('지금 삶에서 중요한 성장 포인트', plain.growth),
         gyeokLine,
         reportBlock('오행과 음양 참고', `오행 분포는 ${renderElementSpread(saju.elements)}입니다. 음양은 양 ${saju.yinYang.yang} / 음 ${saju.yinYang.yin}로 나타납니다. ${saju.yinYang.yang >= saju.yinYang.yin ? '바깥으로 움직이고 표현하는 힘이 조금 더 앞설 수 있습니다. 다만 빠르게 움직일수록 쉬는 시간을 의식적으로 챙기는 것이 좋습니다.' : '안쪽에서 살피고 축적하는 힘이 조금 더 깊을 수 있습니다. 다만 생각이 오래 머물수록 작은 실행을 함께 두는 것이 좋습니다.'}`),
+        renderManseryeokReferenceBlock(),
         reportBlock('해석 기준', `${saju.calendarNote} ${saju.engineNote} 이 리포트는 자기 이해를 돕는 해석형 콘텐츠이며, 실제 선택은 현재 상황과 본인의 판단을 함께 보고 결정하는 것이 좋습니다.`),
     ].join('');
 }

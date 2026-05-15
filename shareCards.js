@@ -62,19 +62,19 @@ export function buildReportCanvas(type, result) {
 
     const payload = getCardPayload(type, result);
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#17213a';
+    ctx.fillStyle = '#f7e8bd';
     ctx.font = '700 34px serif';
     ctx.fillText('相結', 540, 118);
     ctx.font = '700 28px sans-serif';
-    ctx.fillStyle = '#9c7445';
+    ctx.fillStyle = '#d9b86f';
     ctx.fillText(payload.kicker, 540, 164);
 
-    ctx.fillStyle = '#111827';
+    ctx.fillStyle = '#fff8ea';
     ctx.font = '800 58px sans-serif';
     drawWrappedText(ctx, payload.title, 540, 250, 820, 70, 'center');
 
     ctx.font = '700 34px sans-serif';
-    ctx.fillStyle = '#9c7445';
+    ctx.fillStyle = '#d9b86f';
     drawWrappedText(ctx, payload.subtitle, 540, 365, 820, 46, 'center');
 
     drawSeal(ctx, payload.seal, 540, 520);
@@ -84,19 +84,19 @@ export function buildReportCanvas(type, result) {
         y = drawCardRow(ctx, row.label, row.value, y);
     });
 
-    ctx.fillStyle = '#111827';
+    ctx.fillStyle = '#fff8ea';
     ctx.font = '700 34px sans-serif';
     ctx.fillText('오늘의 결', 540, 1288);
     ctx.font = '400 31px sans-serif';
-    ctx.fillStyle = '#4c4a45';
+    ctx.fillStyle = '#e7dcc9';
     drawWrappedText(ctx, payload.quote, 540, 1342, 800, 48, 'center', 4);
 
-    ctx.strokeStyle = 'rgba(156, 116, 69, 0.42)';
+    ctx.strokeStyle = 'rgba(228, 191, 114, 0.46)';
     ctx.beginPath();
     ctx.moveTo(280, 1490);
     ctx.lineTo(800, 1490);
     ctx.stroke();
-    ctx.fillStyle = '#7a7167';
+    ctx.fillStyle = '#b9ad9a';
     ctx.font = '700 24px sans-serif';
     ctx.fillText('상결 · AI 관상 사주 리포트', 540, 1538);
     return canvas;
@@ -164,22 +164,22 @@ function getCardPayload(type, result) {
 
 function drawBackground(ctx, canvas, type) {
     const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-    gradient.addColorStop(0, type === 'daily' ? '#f7efe0' : '#fbf6eb');
-    gradient.addColorStop(0.58, '#eadcc4');
-    gradient.addColorStop(1, type === 'face' ? '#d9c5a7' : '#cdb38b');
+    gradient.addColorStop(0, type === 'daily' ? '#10182a' : '#080b14');
+    gradient.addColorStop(0.56, '#151022');
+    gradient.addColorStop(1, type === 'face' ? '#2a1d30' : '#302512');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.42)';
+    ctx.fillStyle = 'rgba(255, 248, 234, 0.06)';
     roundRect(ctx, 74, 74, 932, 1472, 54);
     ctx.fill();
-    ctx.strokeStyle = 'rgba(128, 88, 45, 0.32)';
+    ctx.strokeStyle = 'rgba(228, 191, 114, 0.38)';
     ctx.lineWidth = 2;
     roundRect(ctx, 104, 104, 872, 1412, 38);
     ctx.stroke();
 
     ctx.globalAlpha = 0.18;
-    ctx.strokeStyle = '#8c6a3e';
+    ctx.strokeStyle = '#e4bf72';
     for (let x = 150; x < 960; x += 90) {
         ctx.beginPath();
         ctx.moveTo(x, 130);
@@ -187,18 +187,26 @@ function drawBackground(ctx, canvas, type) {
         ctx.stroke();
     }
     ctx.globalAlpha = 1;
+    ctx.fillStyle = 'rgba(247, 232, 189, 0.34)';
+    for (let i = 0; i < 60; i += 1) {
+        const x = 130 + ((i * 173) % 820);
+        const y = 130 + ((i * 277) % 1360);
+        ctx.beginPath();
+        ctx.arc(x, y, i % 5 === 0 ? 1.8 : 1, 0, Math.PI * 2);
+        ctx.fill();
+    }
 }
 
 function drawSeal(ctx, seal, x, y) {
     ctx.save();
-    ctx.fillStyle = '#17213a';
-    ctx.strokeStyle = '#b98b4f';
+    ctx.fillStyle = '#0a0f1c';
+    ctx.strokeStyle = '#e4bf72';
     ctx.lineWidth = 4;
     ctx.beginPath();
     ctx.arc(x, y, 92, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = '#fff8ed';
+    ctx.fillStyle = '#fff8ea';
     ctx.font = seal.length > 1 ? '700 74px sans-serif' : '700 88px serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -207,14 +215,14 @@ function drawSeal(ctx, seal, x, y) {
 }
 
 function drawCardRow(ctx, label, value, y) {
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.58)';
+    ctx.fillStyle = 'rgba(255, 248, 234, 0.075)';
     roundRect(ctx, 160, y, 760, 116, 26);
     ctx.fill();
-    ctx.fillStyle = '#9c7445';
+    ctx.fillStyle = '#e4bf72';
     ctx.font = '800 24px sans-serif';
     ctx.textAlign = 'left';
     ctx.fillText(label, 198, y + 38);
-    ctx.fillStyle = '#27231d';
+    ctx.fillStyle = '#fff8ea';
     ctx.font = '500 28px sans-serif';
     drawWrappedText(ctx, value, 198, y + 75, 680, 38, 'left', 2);
     return y + 138;

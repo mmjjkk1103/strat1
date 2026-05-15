@@ -95,7 +95,7 @@ let loadingTimer;
 init();
 
 function init() {
-    setTheme(localStorage.getItem('theme') || 'light');
+    setTheme(localStorage.getItem('theme') || 'dark');
     renderAnimalGuide();
     renderSelfQuiz();
     bindEvents();

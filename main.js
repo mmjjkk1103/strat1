@@ -40,6 +40,11 @@ const birthDateInput = document.getElementById('birth-date');
 const calendarTypeInput = document.getElementById('calendar-type');
 const birthTimeInput = document.getElementById('birth-time');
 const readerGenderInput = document.getElementById('reader-gender');
+const moodReferenceInput = document.getElementById('mood-reference');
+const toneReferenceInput = document.getElementById('tone-reference');
+const avoidExpressionInput = document.getElementById('avoid-expression');
+const focusElementsInput = document.getElementById('focus-elements');
+const promptHelper = document.getElementById('prompt-helper');
 const loadingPanel = document.getElementById('loading-panel');
 const loadingStep = document.getElementById('loading-step');
 const loadingProgress = document.getElementById('loading-progress');
@@ -89,6 +94,9 @@ function init() {
 function bindEvents() {
     themeButtons.forEach((button) => button.addEventListener('click', () => setTheme(button.dataset.theme)));
     imageUpload.addEventListener('change', (event) => handleImageFile(event.target.files[0], 'main'));
+    [moodReferenceInput, toneReferenceInput, avoidExpressionInput, focusElementsInput].forEach((input) => {
+        input.addEventListener('input', updatePromptHelper);
+    });
     compareUpload.addEventListener('change', (event) => handleImageFile(event.target.files[0], 'compare'));
     dropZone.addEventListener('click', (event) => {
         if (event.target !== imageUpload) imageUpload.click();
@@ -319,6 +327,7 @@ async function analyzeCurrentImage(target) {
 function renderResult({ scores, features, winner, top, partAnimals, saju, daily, weekly, symbol, userProfile }) {
     const shareSummaries = createShareSummaries({ winner, partAnimals, saju, daily, userProfile });
     const coreSummary = buildCoreResultSummary(winner, saju);
+    const readingTone = buildReadingTone({ winner, top, saju, userProfile, daily });
     winnerCard.innerHTML = `
         <div class="winner-main">
             <div class="winner-emoji">${winner.emoji}</div>
@@ -363,6 +372,7 @@ function renderResult({ scores, features, winner, top, partAnimals, saju, daily,
         weekly,
         symbol,
         userProfile,
+        readingTone,
         firstImpression,
         detailHtml,
         compatibilityHtml,
@@ -375,46 +385,74 @@ function renderResult({ scores, features, winner, top, partAnimals, saju, daily,
     resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function buildOracleCards({ winner, top, features, partAnimals, saju, daily, weekly, symbol, userProfile, firstImpression, detailHtml, compatibilityHtml }) {
+function buildOracleCards({ winner, top, features, partAnimals, saju, daily, weekly, symbol, userProfile, readingTone, firstImpression, detailHtml, compatibilityHtml }) {
+    const supportAnimal = top[1] || winner;
+    const timeNotice = userProfile.birthTime === 'unknown'
+        ? '<p class="time-note">출생시간이 입력되지 않아 시주 분석은 제외하고, 입력된 정보 기준으로 해석했습니다.</p>'
+        : '';
+    const userRefs = renderUserReferenceNote(userProfile);
     return [
         {
-            glyph: '戀',
-            title: '연애 성향',
-            tease: '좋아하면 티 안 나는 척하는데, 눈은 이미 말하고 있음.',
+            glyph: '獸',
+            title: '대표 동물상',
+            tease: `${winner.name}이 가장 앞에 뜨고, ${supportAnimal.name}이 분위기를 받칩니다.`,
             body: renderShortBlocks([
-                ['끌리는 방식', `${winner.name}상은 처음엔 쉽게 열리지 않습니다. 대신 마음이 움직이면 오래 봅니다.`],
-                ['연애 패턴', `${saju.element.name} 기운이 섞여서, 설렘보다 안정감을 확인하려는 쪽이 강합니다.`],
-                ['조심할 점', '괜찮은 척을 너무 잘해서 상대가 신호를 놓칠 수 있습니다.'],
+                ['대표 상', readingTone.animalLead],
+                ['보조 상', `${supportAnimal.name}의 ${supportAnimal.keywords[0]}이 뒤에서 섞입니다. 그래서 한 가지 인상으로만 고정되지 않고, 상황에 따라 부드러움과 선명함이 번갈아 보일 수 있습니다.`],
             ]),
-        },
-        {
-            glyph: '相',
-            title: '첫인상',
-            tease: '처음엔 살짝 어려운데, 이상하게 계속 눈이 가는 얼굴.',
-            body: `<div class="feature-comments">${firstImpression}</div><p class="feature-summary">사진 기준으로는 ${winner.name} 쪽 분위기가 먼저 뜹니다. 닮았다는 말보다, 남이 처음 붙이는 인상에 가깝습니다.</p>`,
             isOpen: true,
         },
         {
-            glyph: '心',
-            title: '숨겨진 본성',
-            tease: '겉보다 속이 더 예민합니다. 그냥 넘긴 척하고 혼자 오래 복기하는 편.',
-            body: renderSajuProfileReport(saju),
+            glyph: '相',
+            title: '첫인상 요약',
+            tease: '처음엔 살짝 어려운데, 이상하게 계속 눈이 가는 얼굴.',
+            body: `<div class="feature-comments">${firstImpression}</div><p class="feature-summary">사진 기준으로는 ${winner.name} 쪽 분위기가 먼저 뜹니다. 닮았다는 말보다, 남이 처음 붙이는 인상에 가깝습니다.</p>`,
         },
         {
-            glyph: '財',
-            title: '돈 감각',
-            tease: '충동구매보다 “이게 나한테 오래 남나?”를 따지는 타입.',
+            glyph: '心',
+            title: '내면 성향 요약',
+            tease: '겉보다 속이 더 예민합니다. 그냥 넘긴 척하고 혼자 오래 복기하는 편.',
+            body: `${timeNotice}${renderShortBlocks([
+                ['안쪽의 결', readingTone.innerEssay],
+                ['겉과 속의 차이', readingTone.outerInnerGap],
+                ['사용자 입력 반영', userRefs],
+            ])}`,
+        },
+        {
+            glyph: '五',
+            title: '주요 오행 분석',
+            tease: `${readingTone.strongLabel}이 앞서지만, 한 가지 색으로만 읽히진 않습니다.`,
             body: renderShortBlocks([
-                ['소비 리듬', daily.money],
-                ['재물 감각', `${saju.element.keywords[0]} 기운이 돈을 쓸 때도 드러납니다. 기준이 생기면 꽤 단단합니다.`],
-                ['오늘의 힌트', daily.action],
+                ['강한 오행', readingTone.strongEssay],
+                ['약한 오행', readingTone.weakEssay],
+                ['오행 분포', readingTone.elementSpread],
+            ]),
+        },
+        {
+            glyph: '缺',
+            title: '부족하거나 과한 오행',
+            tease: '강한 기운보다 비어 있는 쪽이 일상에서 더 티 날 때가 있습니다.',
+            body: renderShortBlocks([
+                ['부족한 흐름', readingTone.missingEssay],
+                ['과한 흐름', readingTone.excessEssay],
+                ['계절감', readingTone.seasonEssay],
             ]),
         },
         {
             glyph: '人',
-            title: '인간관계와 궁합',
+            title: '관계에서의 모습',
             tease: '넓게 친한 척보다, 진짜 편한 몇 명에게 에너지를 씁니다.',
-            body: `<div class="compatibility-list">${compatibilityHtml}</div>`,
+            body: `${renderShortBlocks([['사회적 관계', readingTone.relationEssay]])}<div class="compatibility-list">${compatibilityHtml}</div>`,
+        },
+        {
+            glyph: '戀',
+            title: '연애 또는 친밀한 관계',
+            tease: '좋아하면 티 안 나는 척하는데, 눈은 이미 말하고 있음.',
+            body: renderShortBlocks([
+                ['끌리는 방식', readingTone.loveEssay],
+                ['친밀해진 뒤', `${supportAnimal.name}의 결이 가까운 관계에서 더 드러납니다. 편해질수록 말보다 행동, 표정보다 작은 습관에서 마음이 보일 수 있습니다.`],
+                ['조심할 점', '괜찮은 척을 너무 잘하면 상대가 신호를 놓칩니다. 싫은 것보다 필요한 것을 먼저 말하는 편이 좋습니다.'],
+            ]),
         },
         {
             glyph: '學',
@@ -422,24 +460,25 @@ function buildOracleCards({ winner, top, features, partAnimals, saju, daily, wee
             tease: '몰입이 오면 오래 가는데, 시작 전까지 마음의 예열이 깁니다.',
             body: renderShortBlocks([
                 ['집중 방식', daily.focus],
-                ['잘 맞는 환경', '시끄러운 동기부여보다 조용한 루틴, 작은 체크리스트, 마감 시간이 더 잘 먹힙니다.'],
-                ['막히는 순간', '감정이 흐트러지면 집중도 같이 내려갑니다. 먼저 정리하고 들어가야 합니다.'],
+                ['막히는 순간', readingTone.focusEssay],
             ]),
         },
         {
-            glyph: '命',
-            title: '인생 흐름',
-            tease: '빨리 뜨기보다, 어느 순간 자기 결이 또렷해지는 운.',
-            body: renderWeeklyFortune(weekly),
+            glyph: '氣',
+            title: '나에게 어울리는 분위기 키워드',
+            tease: readingTone.moodKeywords.join(' · '),
+            body: renderShortBlocks([
+                ['분위기 키워드', readingTone.moodKeywords.join(' · ')],
+                ['이미지 방향', readingTone.imageDirection],
+            ]),
         },
         {
-            glyph: '險',
-            title: '위험한 성향',
-            tease: '상처받은 티를 안 내다가, 어느 날 조용히 거리 둡니다.',
+            glyph: '日',
+            title: '오늘의 조언 한 문장',
+            tease: daily.meditation,
             body: renderShortBlocks([
-                ['주의 신호', daily.caution],
-                ['멘탈 패턴', daily.emotion],
-                ['오해 포인트', '사람들은 무심하다고 보지만, 사실은 너무 많이 느껴서 말수가 줄어든 쪽일 수 있습니다.'],
+                ['오늘의 조언', daily.meditation],
+                ['오늘의 행동', daily.action],
             ]),
         },
         {
@@ -470,7 +509,7 @@ function buildOracleCards({ winner, top, features, partAnimals, saju, daily, wee
             glyph: '詳',
             title: '상세 리포트',
             tease: '길게 보고 싶을 때만 펼치는 깊은 해석.',
-            body: detailHtml,
+            body: `${timeNotice}${renderSajuProfileReport(saju)}${detailHtml}`,
         },
     ];
 }
@@ -550,6 +589,188 @@ function buildCoreResultSummary(winner, saju) {
     return { title, body, keyword: elementTone.short };
 }
 
+const elementVariantLibrary = {
+    wood: [
+        '새 가지가 뻗듯 가능성을 먼저 봅니다. 시작이 늦어 보여도, 마음속에서는 이미 여러 방향을 재고 있습니다.',
+        '목(木)이 강하게 뜨면 사람과 일의 성장 가능성을 빨리 알아봅니다. 대신 모든 가능성을 다 붙잡으면 중심이 흐려질 수 있습니다.',
+        '부드럽지만 가만히 있지는 않는 기운입니다. 조용히 방향을 바꾸고, 어느 순간 자기 길을 넓혀갑니다.',
+        '새로운 사람이나 환경 앞에서 의외로 회복이 빠릅니다. 막히면 오래 버티기보다 다른 문을 찾는 쪽입니다.',
+        '말보다 흐름을 중요하게 봅니다. 관계도 일도 “앞으로 좋아질 수 있나”를 먼저 보는 타입입니다.',
+    ],
+    fire: [
+        '화(火)는 단순히 밝은 기운이 아니라, 마음이 움직일 때 표정과 행동에 온도가 생기는 감각에 가깝습니다.',
+        '좋아하는 일 앞에서는 속도가 빨라집니다. 반대로 마음이 식으면 몸도 같이 느려지는 편입니다.',
+        '사람들 사이에서 분위기를 살리는 힘이 있습니다. 다만 오래 밝게 타려면 혼자 식히는 시간도 필요합니다.',
+        '확신이 오면 먼저 움직입니다. 그 추진력은 장점이지만, 뜨거운 순간의 말은 한 박자 늦추는 편이 좋습니다.',
+        '표현하고 싶은 마음이 강합니다. 인정받고 싶은 욕구도 있지만, 그만큼 누군가를 따뜻하게 비추는 힘도 있습니다.',
+    ],
+    earth: [
+        '토(土)는 느린 기운이 아니라 오래 버티는 감각입니다. 한 번 마음을 주면 쉽게 걷어내지 않습니다.',
+        '관계와 일에서 안정감을 먼저 봅니다. 화려한 말보다 꾸준한 행동을 더 믿는 쪽입니다.',
+        '겉으로는 무던해 보여도 속으로는 기준과 책임을 많이 계산합니다. 그래서 가끔 혼자 무거워질 수 있습니다.',
+        '변화 앞에서 바로 뛰기보다 땅을 먼저 고릅니다. 느려 보일 수 있지만, 자리 잡으면 쉽게 흔들리지 않습니다.',
+        '사람을 챙길 때 말보다 행동으로 갑니다. 다만 표현이 늦으면 상대가 마음을 못 알아볼 수 있습니다.',
+    ],
+    metal: [
+        '금(金)은 단순히 차가운 기운이라기보다, 상황을 한 발 물러서서 정리하려는 감각에 가깝습니다.',
+        '판단이 빠르고 기준이 분명합니다. 다만 마음이 없는 게 아니라, 감정을 정리한 뒤에야 말이 나오는 쪽입니다.',
+        '날카롭지만 섬세한 금입니다. 작은 어긋남을 빨리 알아차리지만, 가까운 사람에게는 의외로 약해질 수 있습니다.',
+        '원칙을 중시하지만 속은 생각보다 여립니다. 그래서 실망하면 크게 화내기보다 조용히 거리를 둡니다.',
+        '완성도를 보는 눈이 있습니다. 다만 여덟 할의 결과도 세상에 내보내는 연습이 필요합니다.',
+    ],
+    water: [
+        '수(水)는 조용한 기운이 아니라 깊이 스며드는 감각입니다. 말은 적어도 장면을 오래 기억합니다.',
+        '겉으로는 담담해 보여도 안쪽에서는 많은 감정이 흐릅니다. 그래서 혼자 정리하는 시간이 꼭 필요합니다.',
+        '사람을 넓게보다 깊게 봅니다. 한 번 신뢰하면 오래 마음을 쓰는 쪽입니다.',
+        '상황의 숨은 맥락을 잘 봅니다. 대신 생각이 깊어질수록 시작이 늦어질 수 있습니다.',
+        '차분한 관찰력이 강합니다. 말하지 않아도 분위기의 온도 변화를 빨리 알아차립니다.',
+    ],
+};
+
+const elementLabelsKo = { wood: '목(木)', fire: '화(火)', earth: '토(土)', metal: '금(金)', water: '수(水)' };
+const elementOrder = ['wood', 'fire', 'earth', 'metal', 'water'];
+
+function buildReadingTone({ winner, top, saju, userProfile, daily }) {
+    const spread = analyzeElementSpread(saju.elements);
+    const season = getSeasonTone(userProfile.birthDate);
+    const variantSeed = saju.daySeed + winner.id.length * 13 + (top[1]?.id.length || 0) * 7 + userProfile.name.length;
+    const strongText = pickElementVariant(spread.strong.key, variantSeed);
+    const weakText = pickElementVariant(spread.weak.key, variantSeed + 2);
+    const missingText = spread.missing.length
+        ? `${spread.missing.map((key) => elementLabelsKo[key]).join(', ')} 쪽이 비어 있어, 그 기운은 의식적으로 빌려와야 편합니다. 예를 들면 ${missingElementAdvice(spread.missing[0])}`
+        : '완전히 비어 있는 오행은 없습니다. 대신 강한 쪽이 목소리를 크게 내면 다른 기운이 묻힐 수 있습니다.';
+    const excessText = spread.excess.length
+        ? `${spread.excess.map((key) => elementLabelsKo[key]).join(', ')}이 과하게 잡힙니다. 장점이 선명한 만큼 피곤할 때는 그 장점이 고집처럼 보일 수 있습니다.`
+        : '특정 오행이 지나치게 몰리지는 않습니다. 이 경우에는 상황에 따라 얼굴의 인상과 생년의 기운이 번갈아 앞에 나옵니다.';
+    const hourText = userProfile.birthTime === 'unknown'
+        ? '출생시간이 없어 시주의 세밀한 결은 제외했습니다.'
+        : `${userProfile.birthTime}에 가까운 시간대는 하루의 리듬에서 ${hourMood(userProfile.birthTime)} 쪽을 더합니다.`;
+    const focusText = userProfile.focusElements
+        ? `사용자가 특히 보고 싶다고 적은 “${userProfile.focusElements}”를 결과 문장에 우선 반영했습니다.`
+        : '강조 항목을 따로 적지 않아, 관계와 내면 성향을 균형 있게 보았습니다.';
+    const moodKeywords = createMoodKeywords(winner, spread, userProfile);
+
+    return {
+        strongLabel: elementLabelsKo[spread.strong.key],
+        animalLead: `${winner.name}은 ${winner.keywords[0]}이 먼저 남는 상입니다. 여기에 ${top[1]?.name || winner.name}의 ${top[1]?.keywords[0] || winner.keywords[0]}이 섞여, 첫인상은 단순한 동물상보다 조금 더 입체적으로 보입니다.`,
+        innerEssay: `${strongText} ${hourText} ${season.inner}`,
+        outerInnerGap: `겉으로는 ${winner.keywords[0]}이 먼저 보이지만, 속에서는 ${elementLabelsKo[saju.dayMaster.elementKey]}의 방식으로 상황을 처리하려는 흐름이 있습니다. 그래서 처음 보는 사람과 가까운 사람이 말하는 인상이 다를 수 있습니다.`,
+        strongEssay: `${strongText} 대표 동물상 ${winner.name}의 분위기와 만나면, 이 오행은 말보다 표정과 선택 방식에서 더 잘 드러납니다.`,
+        weakEssay: `${weakText} 약한 오행은 단점이라기보다 덜 쓰는 근육에 가깝습니다. 필요할 때 의식적으로 꺼내 쓰면 균형이 좋아집니다.`,
+        missingEssay: missingText,
+        excessEssay: excessText,
+        seasonEssay: season.text,
+        elementSpread: elementOrder.map((key) => `${elementLabelsKo[key]} ${saju.elements[key]}`).join(' · '),
+        relationEssay: `${winner.name}상은 관계에서 첫 접근보다 “시간이 지나며 남는 인상”이 중요합니다. ${spread.strong.label}이 강하게 잡혀, 사람을 대할 때도 ${relationByElement(spread.strong.key)} ${focusText}`,
+        loveEssay: `${loveByElement(spread.strong.key)} ${top[1] ? `${top[1].name}의 보조 인상 때문에 가까운 사람 앞에서는 생각보다 다른 얼굴이 나올 수 있습니다.` : ''}`,
+        focusEssay: `${daily.focus} ${spread.weak.label}이 약하게 잡힐 때는 집중이 안 되는 이유를 의지 부족으로만 보면 안 됩니다. 환경, 시간, 감정의 노이즈를 먼저 줄이는 편이 더 현실적입니다.`,
+        moodKeywords,
+        imageDirection: userProfile.moodReference
+            ? `입력한 이미지 방향 “${userProfile.moodReference}”을 기준으로 보면, 이 결과는 ${moodKeywords.join(', ')} 쪽으로 정리하는 것이 잘 맞습니다.`
+            : `구체적인 이미지 레퍼런스가 없어서 기본 톤은 딥네이비, 먹색, 흐릿한 달빛, 얇은 금색 라인 쪽으로 잡았습니다.`,
+    };
+}
+
+function analyzeElementSpread(elements) {
+    const sorted = Object.entries(elements).sort((a, b) => b[1] - a[1]);
+    const strong = { key: sorted[0][0], value: sorted[0][1], label: elementLabelsKo[sorted[0][0]] };
+    const weak = { key: sorted[sorted.length - 1][0], value: sorted[sorted.length - 1][1], label: elementLabelsKo[sorted[sorted.length - 1][0]] };
+    return {
+        strong,
+        weak,
+        missing: Object.entries(elements).filter(([, value]) => value === 0).map(([key]) => key),
+        excess: Object.entries(elements).filter(([, value]) => value >= 3).map(([key]) => key),
+    };
+}
+
+function pickElementVariant(elementKey, seed) {
+    const list = elementVariantLibrary[elementKey] || elementVariantLibrary.water;
+    return list[Math.abs(seed) % list.length];
+}
+
+function getSeasonTone(date) {
+    if (!date) return { text: '출생월 정보가 없어 계절감은 약하게만 반영했습니다.', inner: '계절 정보는 약하게만 보았습니다.' };
+    const month = date.getMonth() + 1;
+    if ([3, 4, 5].includes(month)) return { text: '봄의 계절감이 있어 시작과 확장에 마음이 빨리 반응합니다.', inner: '봄 기운이 섞여 새로운 가능성에 민감합니다.' };
+    if ([6, 7, 8].includes(month)) return { text: '여름의 계절감이 있어 표현과 반응 속도가 비교적 살아납니다.', inner: '여름 기운이 섞여 마음이 움직이면 티가 나는 편입니다.' };
+    if ([9, 10, 11].includes(month)) return { text: '가을의 계절감이 있어 정리, 기준, 선택의 감각이 더 또렷해집니다.', inner: '가을 기운이 섞여 관계와 일에서 기준을 세우려 합니다.' };
+    return { text: '겨울의 계절감이 있어 속으로 축적하고 오래 생각하는 흐름이 더 깊어집니다.', inner: '겨울 기운이 섞여 바로 말하기보다 안에서 정리하는 쪽입니다.' };
+}
+
+function hourMood(timeValue) {
+    const hour = Number(timeValue.split(':')[0]);
+    if (hour >= 5 && hour < 11) return '시작, 정리, 준비';
+    if (hour >= 11 && hour < 17) return '표현, 활동, 외부 반응';
+    if (hour >= 17 && hour < 23) return '관계, 감정 정리, 선택';
+    return '내면, 관찰, 깊은 생각';
+}
+
+function missingElementAdvice(elementKey) {
+    return {
+        wood: '새로운 시도를 너무 늦추지 않는 것',
+        fire: '마음을 말과 표정으로 조금 더 보여주는 것',
+        earth: '생활 리듬과 기준을 작게라도 고정하는 것',
+        metal: '거절과 선택의 선을 분명히 세우는 것',
+        water: '혼자 정리할 시간과 깊은 휴식을 확보하는 것',
+    }[elementKey] || '부족한 리듬을 생활 속에서 조금씩 보충하는 것';
+}
+
+function relationByElement(elementKey) {
+    return {
+        wood: '상대의 가능성을 먼저 보고 기다려주는 편입니다.',
+        fire: '반응과 표현으로 분위기를 여는 편입니다.',
+        earth: '말보다 꾸준한 행동으로 신뢰를 쌓는 편입니다.',
+        metal: '예의와 기준을 중요하게 보며 천천히 가까워지는 편입니다.',
+        water: '많은 사람보다 깊게 통하는 사람에게 마음을 쓰는 편입니다.',
+    }[elementKey];
+}
+
+function loveByElement(elementKey) {
+    return {
+        wood: '연애에서는 함께 성장하는 느낌이 중요합니다. 상대가 내 세계를 넓혀준다고 느끼면 마음이 오래 갑니다.',
+        fire: '연애에서는 표현의 온도가 중요합니다. 설렘이 살아 있어야 마음도 움직입니다.',
+        earth: '연애에서는 안정감과 생활의 호흡이 중요합니다. 말보다 반복되는 행동에서 사랑을 확인합니다.',
+        metal: '연애에서는 신뢰와 태도가 중요합니다. 마음이 있어도 먼저 상대의 기준과 책임감을 봅니다.',
+        water: '연애에서는 정서적 깊이가 중요합니다. 쉽게 열리진 않아도 한 번 깊어지면 오래 마음을 씁니다.',
+    }[elementKey];
+}
+
+function createMoodKeywords(winner, spread, userProfile) {
+    const base = ['흐릿한 달빛', '얇은 금색 선', '먹색 배경'];
+    const byElement = {
+        wood: ['안개 낀 정원', '청록빛 비단'],
+        fire: ['바랜 홍색', '촛불 같은 온도'],
+        earth: ['오래된 종이', '차분한 황토빛'],
+        metal: ['차가운 황동', '정제된 선'],
+        water: ['딥네이비', '물안개'],
+    };
+    const requested = [userProfile.moodReference, userProfile.toneReference].filter(Boolean).join(' ');
+    const extracted = requested.match(/[가-힣A-Za-z0-9#]+/g)?.slice(0, 2) || [];
+    return [...new Set([...base, ...(byElement[spread.strong.key] || []), winner.keywords[0], ...extracted])].slice(0, 6);
+}
+
+function renderUserReferenceNote(profile) {
+    if (!profile.moodReference && !profile.toneReference && !profile.avoidExpression && !profile.focusElements) {
+        return '구체적인 레퍼런스가 적히지 않아 기본 상몽 톤으로 해석했습니다. 다음에는 색상, 배경, 문체, 피하고 싶은 표현을 적으면 결과가 더 선명해집니다.';
+    }
+    return [
+        profile.moodReference ? `이미지 분위기: ${profile.moodReference}` : '',
+        profile.toneReference ? `문체 예시: ${profile.toneReference}` : '',
+        profile.avoidExpression ? `피한 표현: ${profile.avoidExpression}` : '',
+        profile.focusElements ? `강조 요소: ${profile.focusElements}` : '',
+    ].filter(Boolean).join(' / ');
+}
+
+function updatePromptHelper() {
+    const text = [moodReferenceInput.value, toneReferenceInput.value, focusElementsInput.value].join(' ').trim();
+    const vagueWords = ['좋다', '예쁘게', '느낌', '재미있게', '몽환적', '감성적'];
+    const isTooVague = text.length > 0 && text.length < 18 && vagueWords.some((word) => text.includes(word));
+    promptHelper.classList.toggle('is-warning', isTooVague);
+    promptHelper.textContent = isTooVague
+        ? '조금 더 구체적으로 적어주세요. 예: 딥네이비 배경, 흐릿한 달빛, 얇은 금색 문양, 친구가 짚어주는 짧은 문체.'
+        : '색상, 배경, 질감, 문양, 문체, 피하고 싶은 표현을 함께 적으면 결과가 더 선명해집니다.';
+}
+
 function getUserProfile() {
     const birthDate = birthDateInput.value ? new Date(`${birthDateInput.value}T12:00:00`) : null;
     return {
@@ -558,6 +779,10 @@ function getUserProfile() {
         calendarType: calendarTypeInput.value,
         birthTime: birthTimeInput.value,
         gender: readerGenderInput.value,
+        moodReference: moodReferenceInput.value.trim(),
+        toneReference: toneReferenceInput.value.trim(),
+        avoidExpression: avoidExpressionInput.value.trim(),
+        focusElements: focusElementsInput.value.trim(),
     };
 }
 

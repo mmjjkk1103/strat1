@@ -140,6 +140,14 @@ function getSajuMonthIndex(date) {
 
 function getHourBranchIndex(birthTime) {
     if (!birthTime || birthTime === 'unknown') return null;
+    // The UI stores birth time in 30-minute steps. Saju hour branches are still
+    // two-hour bands, so this maps HH:mm into the matching traditional branch.
+    if (/^\d{2}:\d{2}$/.test(birthTime)) {
+        const [hourText, minuteText] = birthTime.split(':');
+        const minutes = Number(hourText) * 60 + Number(minuteText);
+        const shifted = (minutes + 60) % 1440;
+        return Math.floor(shifted / 120);
+    }
     return branches.indexOf(branchAlias[birthTime] ?? birthTime);
 }
 

@@ -45,11 +45,11 @@
         <section class="hero-section" aria-labelledby="hero-title">
             <div class="hero-copy">
                 <p class="eyebrow">Oriental face ritual</p>
-                <h1 id="hero-title">상몽</h1>
-                <p class="hero-description">얼굴에 먼저 뜨는 분위기와 태어난 날의 결을 겹쳐 봅니다. 길게 설명하지 않고, 카드 한 장씩 툭 펼쳐지는 테스트입니다.</p>
+                <h1 id="hero-title">내 안의 동물과 기운 찾기</h1>
+                <p class="hero-description">얼굴의 인상, 태어난 시간, 그리고 오행의 흐름을 함께 읽어봅니다. 당신의 인상은 어떤 동물에 가깝고, 그 안에는 어떤 기운이 흐르고 있을까요?</p>
                 <div class="hero-actions">
-                    <label class="button button-primary" for="image-upload">내 상 펼치기</label>
-                    <a class="button button-secondary" href="#result-preview">카드 미리보기</a>
+                    <label class="button button-primary" for="image-upload">내 기운 분석하기</label>
+                    <a class="button button-secondary" href="#result-preview">동물상 리포트 보기</a>
                 </div>
                 <div class="trust-badges" aria-label="서비스 특징">
                     <span>얼굴 + 생년월일</span>
@@ -107,8 +107,8 @@
         <section id="start-test" class="tester-shell" aria-labelledby="tester-title">
             <div class="section-heading">
                 <p class="eyebrow">Start reading</p>
-                <h2 id="tester-title">사진을 올리고, 태어난 날을 더하면 상몽패가 열립니다</h2>
-                <p>정확한 진단이 아니라, 얼굴의 분위기와 입력 정보를 바탕으로 만든 체험형 해석입니다.</p>
+                <h2 id="tester-title">겉으로 보이는 분위기와 안에서 움직이는 기운을 가볍게 풀어드립니다</h2>
+                <p>추상적인 표현보다 구체적인 레퍼런스를 입력할수록 결과가 더 선명해집니다.</p>
             </div>
 
             <div class="tester-grid">
@@ -172,18 +172,54 @@
                                 <label for="birth-time">출생시간</label>
                                 <select id="birth-time">
                                     <option value="unknown">모름</option>
-                                    <option value="子">23:00-01:00</option>
-                                    <option value="丑">01:00-03:00</option>
-                                    <option value="寅">03:00-05:00</option>
-                                    <option value="卯">05:00-07:00</option>
-                                    <option value="辰">07:00-09:00</option>
-                                    <option value="巳">09:00-11:00</option>
-                                    <option value="午">11:00-13:00</option>
-                                    <option value="未">13:00-15:00</option>
-                                    <option value="申">15:00-17:00</option>
-                                    <option value="酉">17:00-19:00</option>
-                                    <option value="戌">19:00-21:00</option>
-                                    <option value="亥">21:00-23:00</option>
+                                    <option value="00:00">00:00</option>
+                                    <option value="00:30">00:30</option>
+                                    <option value="01:00">01:00</option>
+                                    <option value="01:30">01:30</option>
+                                    <option value="02:00">02:00</option>
+                                    <option value="02:30">02:30</option>
+                                    <option value="03:00">03:00</option>
+                                    <option value="03:30">03:30</option>
+                                    <option value="04:00">04:00</option>
+                                    <option value="04:30">04:30</option>
+                                    <option value="05:00">05:00</option>
+                                    <option value="05:30">05:30</option>
+                                    <option value="06:00">06:00</option>
+                                    <option value="06:30">06:30</option>
+                                    <option value="07:00">07:00</option>
+                                    <option value="07:30">07:30</option>
+                                    <option value="08:00">08:00</option>
+                                    <option value="08:30">08:30</option>
+                                    <option value="09:00">09:00</option>
+                                    <option value="09:30">09:30</option>
+                                    <option value="10:00">10:00</option>
+                                    <option value="10:30">10:30</option>
+                                    <option value="11:00">11:00</option>
+                                    <option value="11:30">11:30</option>
+                                    <option value="12:00">12:00</option>
+                                    <option value="12:30">12:30</option>
+                                    <option value="13:00">13:00</option>
+                                    <option value="13:30">13:30</option>
+                                    <option value="14:00">14:00</option>
+                                    <option value="14:30">14:30</option>
+                                    <option value="15:00">15:00</option>
+                                    <option value="15:30">15:30</option>
+                                    <option value="16:00">16:00</option>
+                                    <option value="16:30">16:30</option>
+                                    <option value="17:00">17:00</option>
+                                    <option value="17:30">17:30</option>
+                                    <option value="18:00">18:00</option>
+                                    <option value="18:30">18:30</option>
+                                    <option value="19:00">19:00</option>
+                                    <option value="19:30">19:30</option>
+                                    <option value="20:00">20:00</option>
+                                    <option value="20:30">20:30</option>
+                                    <option value="21:00">21:00</option>
+                                    <option value="21:30">21:30</option>
+                                    <option value="22:00">22:00</option>
+                                    <option value="22:30">22:30</option>
+                                    <option value="23:00">23:00</option>
+                                    <option value="23:30">23:30</option>
                                 </select>
                             </div>
                         </div>
@@ -195,6 +231,27 @@
                             <option value="masculine">남성</option>
                             <option value="neutral">기타/비공개</option>
                         </select>
+
+                        <div class="reference-guide">
+                            <strong>분위기 입력 가이드</strong>
+                            <p>추상적인 표현보다 구체적인 레퍼런스를 입력할수록 결과가 더 정확해집니다.</p>
+                            <p>예: “몽환적이게”보다 “어두운 남색 배경, 흐릿한 달빛, 동양적 문양, 안개 낀 사찰 분위기”처럼 입력해주세요.</p>
+                            <p>레퍼런스 이미지나 원하는 문체 예시를 함께 입력하면 분석 결과와 디자인 방향이 더 선명해집니다.</p>
+                        </div>
+
+                        <label for="mood-reference">참고하고 싶은 이미지 분위기</label>
+                        <textarea id="mood-reference" rows="3" placeholder="예: 딥네이비 배경, 흐릿한 달빛, 얇은 금색 선, 비단 질감, 안개 낀 사찰"></textarea>
+
+                        <label for="tone-reference">원하는 문체 예시</label>
+                        <textarea id="tone-reference" rows="3" placeholder="예: 친구가 조용히 짚어주는 말투, 짧고 장면이 보이는 문장"></textarea>
+
+                        <label for="avoid-expression">피하고 싶은 표현</label>
+                        <textarea id="avoid-expression" rows="2" placeholder="예: 운명을 단정하는 말, 너무 무서운 무속 표현, 반복되는 당신은 문장"></textarea>
+
+                        <label for="focus-elements">분석 결과에서 강조하고 싶은 요소</label>
+                        <textarea id="focus-elements" rows="2" placeholder="예: 연애 패턴, 돈 감각, 인간관계, 집중 스타일, 부족한 오행"></textarea>
+
+                        <p id="prompt-helper" class="prompt-helper" aria-live="polite">“좋다”, “예쁘게”, “재미있게”만 적으면 결과가 흐려질 수 있습니다. 색상, 배경, 문양, 문체, 피하고 싶은 표현을 함께 적어주세요.</p>
                     </div>
                     <h3 id="photo-guide-title">사진 가이드</h3>
                     <ul class="guide-list">
@@ -287,7 +344,7 @@
                     <div id="compare-result" class="compare-result"></div>
                 </section>
 
-                <p class="disclaimer">본 서비스는 자기탐색과 재미를 위한 해석형 콘텐츠이며, 의학적·법률적·재정적 판단을 대체하지 않습니다. 현재 구현은 얼굴 이미지와 입력 정보를 서버에 저장하지 않고 브라우저 안에서 리포트를 생성합니다.</p>
+                <p class="disclaimer">이 분석은 사주·오행·동물상 이미지를 바탕으로 한 엔터테인먼트형 성향 리포트입니다. 실제 성격이나 운명을 단정하지 않습니다. 현재 구현은 얼굴 이미지와 입력 정보를 서버에 저장하지 않고 브라우저 안에서 리포트를 생성합니다.</p>
                 <button id="reset-button" class="button button-ghost button-wide" type="button">다른 사진으로 다시 테스트하기</button>
             </section>
         </section>

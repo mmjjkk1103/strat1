@@ -13,11 +13,11 @@ import { copyText, createShareSummaries, downloadReportCard, shareReport } from 
 const animalById = Object.fromEntries(animalProfiles.map((animal) => [animal.id, animal]));
 const validImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
 const loadingSteps = [
-    '사람들에게 먼저 보이는 인상을 살피고 있습니다...',
-    '얼굴의 윤곽과 표정 흐름을 맞춰보고 있습니다...',
-    '태어난 날의 흐름으로 안쪽 기질을 읽고 있습니다...',
-    '겉의 인상과 속의 기질이 만나는 지점을 정리하고 있습니다...',
-    '종합 리포트를 펼쳤습니다.',
+    '눈매와 윤곽에서 먼저 뜨는 분위기를 보고 있습니다...',
+    '얼굴 비율과 표정의 결을 맞춰보고 있습니다...',
+    '태어난 날의 흐름을 조용히 겹쳐보고 있습니다...',
+    '연애, 돈, 관계 카드로 나누는 중입니다...',
+    '상몽패가 열렸습니다.',
 ];
 
 const themeButtons = document.querySelectorAll('.theme-toggle');
@@ -46,18 +46,7 @@ const loadingProgress = document.getElementById('loading-progress');
 const progressBar = document.getElementById('progress-bar');
 const resultPanel = document.getElementById('result-panel');
 const winnerCard = document.getElementById('winner-card');
-const featureComments = document.getElementById('feature-comments');
-const featureSummary = document.getElementById('feature-summary');
-const resultDetail = document.getElementById('result-detail');
-const partReading = document.getElementById('part-reading');
-const sajuReading = document.getElementById('saju-reading');
-const integrationReading = document.getElementById('integration-reading');
-const dailyFortune = document.getElementById('daily-fortune');
-const weeklyFortune = document.getElementById('weekly-fortune');
-const talismanCard = document.getElementById('talisman-card');
-const compatibilityList = document.getElementById('compatibility-list');
-const selfQuiz = document.getElementById('self-quiz');
-const quizResult = document.getElementById('quiz-result');
+const resultCardDeck = document.getElementById('result-card-deck');
 const saveCardButton = document.getElementById('save-card');
 const copyLinkButton = document.getElementById('copy-link');
 const shareResultButton = document.getElementById('share-result');
@@ -94,7 +83,6 @@ init();
 function init() {
     setTheme(localStorage.getItem('theme') || 'dark');
     renderAnimalGuide();
-    renderSelfQuiz();
     bindEvents();
 }
 
@@ -144,6 +132,13 @@ function bindEvents() {
     resetButton.addEventListener('click', resetTester);
     guideModal.addEventListener('click', (event) => {
         if (event.target.matches('[data-close-modal]')) closeGuideModal();
+    });
+    resultCardDeck.addEventListener('click', (event) => {
+        const toggle = event.target.closest('.oracle-card-toggle');
+        if (!toggle) return;
+        const card = toggle.closest('.oracle-card');
+        const isOpen = card.classList.toggle('is-open');
+        toggle.setAttribute('aria-expanded', String(isOpen));
     });
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape' && !guideModal.hidden) closeGuideModal();
@@ -327,12 +322,12 @@ function renderResult({ scores, features, winner, top, partAnimals, saju, daily,
     winnerCard.innerHTML = `
         <div class="winner-main">
             <div class="winner-emoji">${winner.emoji}</div>
-            <p class="winner-label">종합 핵심 결과</p>
-            <h2>${userProfile.name}님은 ${coreSummary.title}</h2>
+            <p class="winner-label">상몽 대표패</p>
+            <h2>${coreSummary.title}</h2>
             <p class="winner-subtitle">대표 동물상: ${winner.name} · 속의 힌트: ${saju.element.name}</p>
             <p class="winner-message">${coreSummary.body}</p>
             <div class="keyword-row">
-                <span>보이는 나: ${winner.keywords[0]}</span>
+                <span>첫인상: ${winner.keywords[0]}</span>
                 <span>숨은 나: ${saju.element.keywords[0]}</span>
                 <span>접점: ${coreSummary.keyword}</span>
             </div>
@@ -340,38 +335,165 @@ function renderResult({ scores, features, winner, top, partAnimals, saju, daily,
     `;
 
     const comments = buildFeatureComments(winner, top, features);
-    featureComments.innerHTML = comments.slice(0, 3).map((comment) => `<p>${comment}</p>`).join('');
-    featureSummary.textContent = `한마디로, 당신은 ${winner.name}에 가까운 인상입니다. 숫자로 따지기보다 “처음 봤을 때 이런 느낌이 있구나” 하고 읽으면 더 재밌습니다.`;
-
-    partReading.innerHTML = renderPartAnimalReport(partAnimals, features);
-    resultDetail.innerHTML = `
-        <details class="report-disclosure" open>
-            <summary>${winner.emoji} ${winner.name} 상세 리포트</summary>
-            ${renderAnimalTypeReport(winner)}
-        </details>
-        <details class="report-disclosure" open>
-            <summary>관상 총평</summary>
-            ${renderFaceReadingReport(winner, partAnimals, features)}
-        </details>
-    `;
-    sajuReading.innerHTML = renderSajuProfileReport(saju);
-    integrationReading.innerHTML = renderIntegratedReading(winner, partAnimals, saju, features);
-    dailyFortune.innerHTML = renderDailyFortune(daily);
-    weeklyFortune.innerHTML = renderWeeklyFortune(weekly);
-    talismanCard.innerHTML = renderTalismanCard(symbol, winner, daily, userProfile);
-    shareOneLine.textContent = shareSummaries.oneLine;
-
-    compatibilityList.innerHTML = `
+    const firstImpression = comments.slice(0, 3).map((comment) => `<p>${comment}</p>`).join('');
+    const compatibilityHtml = `
         ${winner.compat.map((id) => {
             const animal = animalById[id];
             return `<div class="compat-chip"><span>${animal.emoji}</span><span>${animal.name}</span></div>`;
         }).join('')}
         <p class="combo-summary">${winner.compatText}</p>
     `;
+    const detailHtml = `
+        <details class="report-disclosure">
+            <summary>${winner.emoji} ${winner.name} 상세 리포트</summary>
+            ${renderAnimalTypeReport(winner)}
+        </details>
+        <details class="report-disclosure">
+            <summary>관상 총평</summary>
+            ${renderFaceReadingReport(winner, partAnimals, features)}
+        </details>
+    `;
+    const cardItems = buildOracleCards({
+        winner,
+        top,
+        features,
+        partAnimals,
+        saju,
+        daily,
+        weekly,
+        symbol,
+        userProfile,
+        firstImpression,
+        detailHtml,
+        compatibilityHtml,
+    });
 
-    quizResult.textContent = '문항을 고르면 스스로 느끼는 상과 사진에서 읽힌 상을 나란히 비춰봅니다.';
+    resultCardDeck.innerHTML = cardItems.map(renderOracleCard).join('');
+    renderSelfQuiz();
+    shareOneLine.textContent = shareSummaries.oneLine;
     resultPanel.hidden = false;
     resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function buildOracleCards({ winner, top, features, partAnimals, saju, daily, weekly, symbol, userProfile, firstImpression, detailHtml, compatibilityHtml }) {
+    return [
+        {
+            glyph: '戀',
+            title: '연애 성향',
+            tease: '좋아하면 티 안 나는 척하는데, 눈은 이미 말하고 있음.',
+            body: renderShortBlocks([
+                ['끌리는 방식', `${winner.name}상은 처음엔 쉽게 열리지 않습니다. 대신 마음이 움직이면 오래 봅니다.`],
+                ['연애 패턴', `${saju.element.name} 기운이 섞여서, 설렘보다 안정감을 확인하려는 쪽이 강합니다.`],
+                ['조심할 점', '괜찮은 척을 너무 잘해서 상대가 신호를 놓칠 수 있습니다.'],
+            ]),
+        },
+        {
+            glyph: '相',
+            title: '첫인상',
+            tease: '처음엔 살짝 어려운데, 이상하게 계속 눈이 가는 얼굴.',
+            body: `<div class="feature-comments">${firstImpression}</div><p class="feature-summary">사진 기준으로는 ${winner.name} 쪽 분위기가 먼저 뜹니다. 닮았다는 말보다, 남이 처음 붙이는 인상에 가깝습니다.</p>`,
+            isOpen: true,
+        },
+        {
+            glyph: '心',
+            title: '숨겨진 본성',
+            tease: '겉보다 속이 더 예민합니다. 그냥 넘긴 척하고 혼자 오래 복기하는 편.',
+            body: renderSajuProfileReport(saju),
+        },
+        {
+            glyph: '財',
+            title: '돈 감각',
+            tease: '충동구매보다 “이게 나한테 오래 남나?”를 따지는 타입.',
+            body: renderShortBlocks([
+                ['소비 리듬', daily.money],
+                ['재물 감각', `${saju.element.keywords[0]} 기운이 돈을 쓸 때도 드러납니다. 기준이 생기면 꽤 단단합니다.`],
+                ['오늘의 힌트', daily.action],
+            ]),
+        },
+        {
+            glyph: '人',
+            title: '인간관계와 궁합',
+            tease: '넓게 친한 척보다, 진짜 편한 몇 명에게 에너지를 씁니다.',
+            body: `<div class="compatibility-list">${compatibilityHtml}</div>`,
+        },
+        {
+            glyph: '學',
+            title: '시험/집중 스타일',
+            tease: '몰입이 오면 오래 가는데, 시작 전까지 마음의 예열이 깁니다.',
+            body: renderShortBlocks([
+                ['집중 방식', daily.focus],
+                ['잘 맞는 환경', '시끄러운 동기부여보다 조용한 루틴, 작은 체크리스트, 마감 시간이 더 잘 먹힙니다.'],
+                ['막히는 순간', '감정이 흐트러지면 집중도 같이 내려갑니다. 먼저 정리하고 들어가야 합니다.'],
+            ]),
+        },
+        {
+            glyph: '命',
+            title: '인생 흐름',
+            tease: '빨리 뜨기보다, 어느 순간 자기 결이 또렷해지는 운.',
+            body: renderWeeklyFortune(weekly),
+        },
+        {
+            glyph: '險',
+            title: '위험한 성향',
+            tease: '상처받은 티를 안 내다가, 어느 날 조용히 거리 둡니다.',
+            body: renderShortBlocks([
+                ['주의 신호', daily.caution],
+                ['멘탈 패턴', daily.emotion],
+                ['오해 포인트', '사람들은 무심하다고 보지만, 사실은 너무 많이 느껴서 말수가 줄어든 쪽일 수 있습니다.'],
+            ]),
+        },
+        {
+            glyph: '面',
+            title: '얼굴 부위별 상',
+            tease: '눈, 턱, 윤곽이 각자 다른 말을 합니다.',
+            body: renderPartAnimalReport(partAnimals, features),
+        },
+        {
+            glyph: '合',
+            title: '겉과 속 종합',
+            tease: '보이는 분위기와 실제 반응이 완전히 같진 않습니다.',
+            body: renderIntegratedReading(winner, partAnimals, saju, features),
+        },
+        {
+            glyph: '符',
+            title: '저장용 부적 카드',
+            tease: `${userProfile.name}님의 오늘 상징은 ${symbol.title}.`,
+            body: `<div id="talisman-card" class="talisman-preview">${renderTalismanCard(symbol, winner, daily, userProfile)}</div>`,
+        },
+        {
+            glyph: '問',
+            title: '내가 느끼는 나',
+            tease: '사진 속 나와 내가 아는 나를 맞춰보는 카드.',
+            body: '<div id="self-quiz" class="self-quiz"></div><p id="quiz-result" class="quiz-result">문항을 고르면 스스로 느끼는 상과 사진에서 읽힌 상을 나란히 비춰봅니다.</p>',
+        },
+        {
+            glyph: '詳',
+            title: '상세 리포트',
+            tease: '길게 보고 싶을 때만 펼치는 깊은 해석.',
+            body: detailHtml,
+        },
+    ];
+}
+
+function renderOracleCard(card, index) {
+    const openClass = card.isOpen ? ' is-open' : '';
+    return `
+        <article class="oracle-card${openClass}" style="--card-index:${index}">
+            <button class="oracle-card-toggle" type="button" aria-expanded="${card.isOpen ? 'true' : 'false'}">
+                <span class="oracle-glyph">${card.glyph}</span>
+                <span class="oracle-copy">
+                    <strong>${card.title}</strong>
+                    <small>${card.tease}</small>
+                </span>
+                <span class="oracle-action">펼치기</span>
+            </button>
+            <div class="oracle-card-body">${card.body}</div>
+        </article>
+    `;
+}
+
+function renderShortBlocks(items) {
+    return items.map(([title, body]) => reportBlock(title, body)).join('');
 }
 
 
@@ -423,8 +545,8 @@ function buildCoreResultSummary(winner, saju) {
             : activeAnimals.includes(winner.id)
                 ? '밝고 반응이 살아 있는 사람'
                 : '균형감 있게 기억되는 사람';
-    const title = `겉으로는 ${winner.keywords[0]}이 먼저 보이고, 속으로는 ${elementTone.short}이 중요한 사람`;
-    const body = `얼굴만 보면 당신은 ${outer}으로 기억되기 쉽습니다. 처음 보는 사람도 “왠지 이런 분위기일 것 같다” 하고 꽤 빨리 이미지를 잡을 수 있습니다. 그런데 속을 보면 조금 더 재밌습니다. 생년 정보로 읽은 흐름에는 ${elementTone.hidden}이 함께 보입니다. 그래서 당신은 첫인상만으로 다 설명되는 사람은 아닙니다. 겉으로는 편하게 보이거나 단단해 보여도, 속에서는 은근히 오래 보고 판단하는 부분이 있을 수 있습니다. 가까워질수록 “어? 생각보다 깊네?”라는 말을 듣기 쉬운 타입입니다.`;
+    const title = `${winner.keywords[0]} 얼굴에 ${elementTone.short} 기운`;
+    const body = `처음엔 ${outer}으로 남습니다. 그런데 가까이 보면 바로 읽히는 사람은 아닙니다. 겉은 ${winner.keywords[0]} 쪽인데, 속에는 ${elementTone.hidden}이 깔려 있습니다. 친해질수록 “생각보다 깊네?”라는 말을 듣기 쉬운 상입니다.`;
     return { title, body, keyword: elementTone.short };
 }
 
@@ -558,7 +680,9 @@ function closeGuideModal() {
 }
 
 function renderSelfQuiz() {
-    selfQuiz.innerHTML = quizQuestions.map((question, questionIndex) => `
+    const quizContainer = document.getElementById('self-quiz');
+    if (!quizContainer) return;
+    quizContainer.innerHTML = quizQuestions.map((question, questionIndex) => `
         <div class="quiz-question">
             <strong>${question.question}</strong>
             <div class="quiz-options">
@@ -568,17 +692,20 @@ function renderSelfQuiz() {
             </div>
         </div>
     `).join('');
-    selfQuiz.addEventListener('change', updateQuizResult);
+    quizContainer.addEventListener('change', updateQuizResult);
 }
 
 function updateQuizResult() {
-    const selected = [...selfQuiz.querySelectorAll('input:checked')].map((input) => input.value);
+    const quizContainer = document.getElementById('self-quiz');
+    const quizOutput = document.getElementById('quiz-result');
+    if (!quizContainer || !quizOutput) return;
+    const selected = [...quizContainer.querySelectorAll('input:checked')].map((input) => input.value);
     if (!selected.length) return;
     const counts = selected.reduce((map, id) => map.set(id, (map.get(id) || 0) + 1), new Map());
     const [topSelfId] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
     const selfAnimal = animalById[topSelfId];
     const aiText = currentResult ? `사진에서 읽힌 상은 ${currentResult.winner.name}, ` : '';
-    quizResult.textContent = `${aiText}스스로 느끼는 결은 ${selfAnimal.name}에 가깝습니다. ${selfAnimal.summary}`;
+    quizOutput.textContent = `${aiText}스스로 느끼는 결은 ${selfAnimal.name}에 가깝습니다. ${selfAnimal.summary}`;
 }
 
 function renderCompareResult() {

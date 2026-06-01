@@ -1,18 +1,18 @@
 const cardLabels = {
-    summary: '종합 상 리포트',
-    face: '관상 리포트',
-    saju: '사주 리포트',
-    daily: '오늘의 운세',
+    summary: 'AI 상징 리포트',
+    face: '관상형 인상 카드',
+    saju: '오행 리딩 카드',
+    daily: '오늘의 상징 카드',
 };
 
 export function createShareSummaries(result) {
     const { userProfile, winner, partAnimals, saju, daily } = result;
     const name = userProfile.name;
-    const oneLine = `${name}는 ${winner.name}. 겉은 ${winner.keywords[0]}, 속은 ${saju.element.keywords[0]}이 깊은 사람.`;
-    const face = `${name}의 얼굴은 ${winner.name}에 가깝습니다. 눈은 ${plainAnimal(partAnimals.eyes)}, 입가는 ${plainAnimal(partAnimals.mouth)} 분위기가 함께 보여요.`;
+    const oneLine = `${name}의 대표 상징은 ${winner.name}. 겉은 ${winner.keywords[0]}, 속은 ${saju.element.keywords[0]}이 흐르는 사람.`;
+    const face = `${name}의 관상형 인상은 ${winner.name}에 가깝습니다. 눈매 선택에서는 ${plainAnimal(partAnimals.eyes)}, 분위기에서는 ${plainAnimal(partAnimals.mouth)} 결이 함께 보여요.`;
     const gyeokText = saju.gyeokguk?.name ? `${saju.gyeokguk.name}의 그릇 위에 ` : '';
     const sajuText = `${name}의 일간은 ${saju.dayMaster.stem}(${saju.element.name})입니다. ${gyeokText}${saju.element.keywords[0]}과 ${saju.element.keywords[1]}이 중요한 사람으로 읽혔어요.`;
-    const today = `오늘의 수호 동물은 ${daily.guardian.name}. 행운 키워드는 ${daily.keyword}, 조언은 "${daily.meditation}"`;
+    const today = `오늘의 상징은 ${result.symbol?.title || daily.guardian.name}. 키워드는 ${daily.keyword}, 메시지는 "${daily.meditation}"`;
 
     return { oneLine, face, saju: sajuText, daily: today };
 }
@@ -34,7 +34,7 @@ export async function shareReport(type, result) {
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png', 0.96));
     const file = blob ? new File([blob], `sanggyeol-${type}.png`, { type: 'image/png' }) : null;
     const shareData = {
-        title: `보이는 나, 진짜 나 ${cardLabels[type] || '리포트'}`,
+        title: `상몽 ${cardLabels[type] || '리포트'}`,
         text,
         url: location.href,
     };
@@ -65,7 +65,7 @@ export function buildReportCanvas(type, result) {
     ctx.textAlign = 'center';
     ctx.fillStyle = '#f7e8bd';
     ctx.font = '700 34px serif';
-    ctx.fillText('나', 540, 118);
+    ctx.fillText('相夢', 540, 118);
     ctx.font = '700 28px sans-serif';
     ctx.fillStyle = '#d9b86f';
     ctx.fillText(payload.kicker, 540, 164);
@@ -87,7 +87,7 @@ export function buildReportCanvas(type, result) {
 
     ctx.fillStyle = '#fff8ea';
     ctx.font = '700 34px sans-serif';
-    ctx.fillText('오늘의 결', 540, 1288);
+    ctx.fillText('오늘의 상징 메시지', 540, 1288);
     ctx.font = '400 31px sans-serif';
     ctx.fillStyle = '#e7dcc9';
     drawWrappedText(ctx, payload.quote, 540, 1342, 800, 48, 'center', 4);
@@ -99,7 +99,7 @@ export function buildReportCanvas(type, result) {
     ctx.stroke();
     ctx.fillStyle = '#b9ad9a';
     ctx.font = '700 24px sans-serif';
-    ctx.fillText('보이는 나, 진짜 나', 540, 1538);
+    ctx.fillText('AI 동양 운세·상징 리포트', 540, 1538);
     return canvas;
 }
 
@@ -108,21 +108,21 @@ function getCardPayload(type, result) {
     const name = userProfile.name;
     const common = {
         summary: {
-            kicker: 'OVERALL READING',
-            title: `${name}의 상`,
+            kicker: 'AI SYMBOLIC READING',
+            title: `${name}의 상징 리포트`,
             subtitle: `${symbol.title} · ${winner.name}`,
             seal: winner.emoji,
             rows: [
-                { label: '대표 동물상', value: `${winner.name}에 가까운 인상` },
-                { label: '관상 총평', value: `겉은 ${winner.keywords[0]}, 가까워질수록 ${winner.keywords[1]}이 보이는 타입.` },
+                { label: '대표 동물상', value: `${winner.name}에 가까운 상징` },
+                { label: '한 줄 성향', value: `겉은 ${winner.keywords[0]}, 가까워질수록 ${winner.keywords[1]}이 보이는 타입.` },
                 { label: '사주 총평', value: `${saju.element.name} · ${saju.element.keywords.slice(0, 2).join('과 ')}` },
-                { label: '오늘의 흐름', value: daily.keyword },
+                { label: '오늘의 상징', value: result.symbol?.title || daily.keyword },
             ],
             quote: daily.meditation,
         },
         face: {
-            kicker: 'FACE READING',
-            title: `${name}의 첫인상`,
+            kicker: 'IMPRESSION READING',
+            title: `${name}의 관상형 인상`,
             subtitle: `눈 ${plainAnimal(partAnimals.eyes)} · 입 ${plainAnimal(partAnimals.mouth)} · 윤곽 ${plainAnimal(partAnimals.outline)}`,
             seal: '相',
             rows: [
@@ -147,8 +147,8 @@ function getCardPayload(type, result) {
             quote: weekly.sentence,
         },
         daily: {
-            kicker: 'DAILY FORTUNE',
-            title: `${name}의 오늘 운`,
+            kicker: 'TODAY SYMBOL',
+            title: `${name}의 오늘 상징`,
             subtitle: `${daily.guardian.name}이 지키는 ${daily.keyword}의 날`,
             seal: daily.guardian.emoji,
             rows: [

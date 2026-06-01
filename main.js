@@ -9,6 +9,7 @@ import { createDailyFortune as createRuleDailyFortune } from './dailyFortune.js'
 import { createWeeklyFortune as createRuleWeeklyFortune } from './weeklyFortune.js';
 import { renderIntegrationReport as renderIntegratedReading } from './integratedReading.js';
 import { copyText, createShareSummaries, downloadReportCard, shareReport } from './shareCards.js';
+import { generateResearchBasedSentence, getCautions } from './script.js';
 
 const animalById = Object.fromEntries(animalProfiles.map((animal) => [animal.id, animal]));
 const validImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
@@ -40,6 +41,10 @@ const birthDateInput = document.getElementById('birth-date');
 const calendarTypeInput = document.getElementById('calendar-type');
 const birthTimeInput = document.getElementById('birth-time');
 const readerGenderInput = document.getElementById('reader-gender');
+const eyeShapeInput = document.getElementById('eye-shape');
+const faceShapeInput = document.getElementById('face-shape');
+const firstImpressionInput = document.getElementById('first-impression');
+const currentTopicInput = document.getElementById('current-topic');
 const moodReferenceInput = document.getElementById('mood-reference');
 const toneReferenceInput = document.getElementById('tone-reference');
 const avoidExpressionInput = document.getElementById('avoid-expression');
@@ -93,14 +98,12 @@ function init() {
 
 function bindEvents() {
     themeButtons.forEach((button) => button.addEventListener('click', () => setTheme(button.dataset.theme)));
-    imageUpload.addEventListener('change', (event) => handleImageFile(event.target.files[0], 'main'));
+    imageUpload?.addEventListener('change', (event) => handleImageFile(event.target.files[0], 'main'));
     [moodReferenceInput, toneReferenceInput, avoidExpressionInput, focusElementsInput].forEach((input) => {
         input.addEventListener('input', updatePromptHelper);
     });
-    compareUpload.addEventListener('change', (event) => handleImageFile(event.target.files[0], 'compare'));
-    dropZone.addEventListener('click', (event) => {
-        if (event.target !== imageUpload) imageUpload.click();
-    });
+    compareUpload?.addEventListener('change', (event) => handleImageFile(event.target.files[0], 'compare'));
+    dropZone.addEventListener('click', () => {});
     dropZone.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
@@ -120,13 +123,13 @@ function bindEvents() {
         });
     });
     dropZone.addEventListener('drop', (event) => handleImageFile(event.dataTransfer.files[0], 'main'));
-    startCameraButton.addEventListener('click', () => startCamera('main'));
-    compareCameraButton.addEventListener('click', () => startCamera('compare'));
-    capturePhotoButton.addEventListener('click', capturePhoto);
-    retakePhotoButton.addEventListener('click', () => startCamera(captureTarget));
-    removeImageButton.addEventListener('click', clearMainImage);
+    startCameraButton?.addEventListener('click', () => startCamera('main'));
+    compareCameraButton?.addEventListener('click', () => startCamera('compare'));
+    capturePhotoButton?.addEventListener('click', capturePhoto);
+    retakePhotoButton?.addEventListener('click', () => startCamera(captureTarget));
+    removeImageButton?.addEventListener('click', clearMainImage);
     analyzeButton.addEventListener('click', () => analyzeCurrentImage('main'));
-    analyzeCompareButton.addEventListener('click', () => analyzeCurrentImage('compare'));
+    analyzeCompareButton?.addEventListener('click', () => analyzeCurrentImage('compare'));
     saveCardButton.addEventListener('click', saveResultCard);
     copyLinkButton.addEventListener('click', copyResultLink);
     shareResultButton.addEventListener('click', shareResult);
@@ -135,7 +138,10 @@ function bindEvents() {
     shareReportButtons.forEach((button) => button.addEventListener('click', () => shareSelectedReport(button.dataset.shareReport)));
     compareToggle.addEventListener('click', () => {
         comparePanel.hidden = !comparePanel.hidden;
-        if (!comparePanel.hidden) comparePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (!comparePanel.hidden) {
+            renderCompareSeedResult();
+            comparePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     });
     resetButton.addEventListener('click', resetTester);
     guideModal.addEventListener('click', (event) => {
@@ -258,17 +264,11 @@ function capturePhoto() {
 
 async function analyzeCurrentImage(target) {
     const isCompare = target === 'compare';
-    const source = isCompare ? (compareCanvas || compareImage) : (capturedCanvas || imagePreview);
     const button = isCompare ? analyzeCompareButton : analyzeButton;
     const userProfile = getUserProfile();
 
-    if (!source || (!isCompare && !capturedCanvas && !imagePreview.src) || (isCompare && !compareCanvas && !compareImage.src)) {
-        showStatus(isCompare ? '비교할 얼굴을 먼저 올려주세요.' : '상을 읽을 얼굴 사진을 먼저 올려주세요.', true);
-        return;
-    }
-
-    if (!isCompare && !userProfile.birthDate) {
-        showStatus('태어난 날을 더하면 얼굴의 상과 생년의 결을 함께 읽을 수 있습니다.', true);
+    if (!userProfile.birthDate) {
+        showStatus('생년월일을 입력하면 오행과 계절감을 함께 읽을 수 있습니다.', true);
         birthDateInput.focus();
         return;
     }
@@ -277,20 +277,18 @@ async function analyzeCurrentImage(target) {
     showLoading();
 
     try {
-        await waitForImageReady(source);
         await runLoadingSequence();
-        const landmarks = await detectFaceLandmarks(source);
-        const features = extractLandmarkFeatures(landmarks);
-        const scores = scoreAnimalTypes(features, animalProfiles);
-        const partAnimals = scorePartAnimals(features, animalProfiles);
+        const manualFeatures = buildManualFaceFeatures(userProfile);
+        const scores = scoreAnimalTypes(manualFeatures, animalProfiles);
+        const partAnimals = scorePartAnimals(manualFeatures, animalProfiles);
         const saju = createSajuProfile(userProfile);
         const daily = createRuleDailyFortune(scores[0], saju, userProfile, animalProfiles);
         const weekly = createRuleWeeklyFortune(scores[0], saju, userProfile, animalProfiles);
-        const symbol = createSajuSymbol(scores[0], saju, userProfile);
+        const symbol = createSymbolicReading(scores[0], saju, userProfile, daily);
         const analysis = {
             scores,
-            features,
-            faceFeatures: features,
+            features: manualFeatures,
+            faceFeatures: manualFeatures,
             partAnimals,
             saju,
             sajuProfile: saju,
@@ -301,7 +299,6 @@ async function analyzeCurrentImage(target) {
             winner: scores[0],
             top: scores.slice(0, 3),
         };
-        drawAnalysisOverlay(isCompare ? 'compare' : 'main', landmarks, source);
 
         if (isCompare) {
             comparePersonResult = analysis;
@@ -309,19 +306,149 @@ async function analyzeCurrentImage(target) {
             resultPanel.hidden = false;
             comparePanel.hidden = false;
             comparePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            showStatus('친구의 상도 함께 펼쳤습니다.', false);
+            showStatus('친구의 상징 리포트도 함께 펼쳤습니다.', false);
         } else {
             currentResult = analysis;
             renderResult(analysis);
-            showStatus('운세첩이 완성되었습니다. 카드로 저장하거나 나누어보세요.', false);
+            showStatus('무료 리포트가 완성되었습니다. 저장하거나 친구에게 공유해보세요.', false);
         }
     } catch (error) {
         console.error(error);
-        handleAnalyzeError(error);
+        showStatus(`리포트를 펼치지 못했습니다. ${getCautions()[0]}`, true);
     } finally {
         hideLoading();
         button.disabled = false;
     }
+}
+
+
+
+const symbolicMessages = [
+    { key: 'moon', title: '달의 거울', glyph: '月', elements: ['water', 'metal'], text: '오늘은 마음을 바로 결론 내리기보다, 한 번 비춰보고 이름 붙이는 시간이 잘 맞습니다.' },
+    { key: 'thread', title: '붉은 실', glyph: '絲', elements: ['fire', 'wood'], text: '관계의 신호가 작게 오갑니다. 답을 재촉하기보다 이어지는 감각을 살펴보세요.' },
+    { key: 'door', title: '안개 속 문', glyph: '門', elements: ['water', 'wood'], text: '아직 선명하지 않은 선택지가 있습니다. 오늘은 문을 닫기보다 손잡이의 위치를 확인하는 날입니다.' },
+    { key: 'blade', title: '얇은 칼', glyph: '劍', elements: ['metal'], text: '흐린 말을 정리하고 경계를 세우기 좋습니다. 단, 날카로움보다 정확함을 먼저 쓰는 편이 좋습니다.' },
+    { key: 'pond', title: '별이 비친 연못', glyph: '星', elements: ['water', 'earth'], text: '겉으로는 조용해도 안쪽에서는 중요한 감정이 가라앉고 있습니다. 혼자 정리할 시간이 필요합니다.' },
+    { key: 'talisman', title: '금빛 부적', glyph: '符', elements: ['earth', 'fire'], text: '오늘의 보호감은 큰 확신보다 작은 루틴에서 옵니다. 반복 가능한 행동 하나가 기운을 붙잡아줍니다.' },
+    { key: 'tree', title: '푸른 나무', glyph: '木', elements: ['wood'], text: '아직 작아 보여도 자라는 방향이 있습니다. 완성보다 시작의 리듬을 믿어도 좋은 날입니다.' },
+];
+
+function buildManualFaceFeatures(profile) {
+    const features = {
+        roundFace: 0.34,
+        eyeRoundness: 0.34,
+        eyeSoftness: 0.34,
+        smileCurve: 0.34,
+        compactFeatures: 0.34,
+        sharpJaw: 0.24,
+        eyeSlenderness: 0.24,
+        eyeTailUp: 0.2,
+        longFace: 0.24,
+        cheekDefinition: 0.24,
+        bigEyes: 0.24,
+        smallMouth: 0.22,
+        wideFace: 0.22,
+        softJaw: 0.26,
+        broadFeatures: 0.22,
+        browIntensity: 0.2,
+        expressiveMouth: 0.24,
+        longMidface: 0.2,
+        wideEyeGap: 0.2,
+        mouthCornerUp: 0.24,
+    };
+    const boost = (key, value) => { features[key] = Math.min(1, (features[key] || 0) + value); };
+    const lower = (key, value) => { features[key] = Math.max(0, (features[key] || 0) - value); };
+
+    const eyeMap = {
+        soft: () => { boost('eyeSoftness', 0.42); boost('smileCurve', 0.16); lower('browIntensity', 0.08); },
+        round: () => { boost('eyeRoundness', 0.42); boost('bigEyes', 0.34); boost('compactFeatures', 0.14); },
+        slender: () => { boost('eyeSlenderness', 0.44); boost('cheekDefinition', 0.16); lower('eyeRoundness', 0.1); },
+        upturned: () => { boost('eyeTailUp', 0.48); boost('eyeSlenderness', 0.28); boost('cheekDefinition', 0.14); },
+        deep: () => { boost('longMidface', 0.3); boost('browIntensity', 0.22); boost('eyeSlenderness', 0.18); },
+        intense: () => { boost('browIntensity', 0.42); boost('sharpJaw', 0.22); boost('broadFeatures', 0.18); },
+    };
+    const faceMap = {
+        round: () => { boost('roundFace', 0.42); boost('softJaw', 0.24); lower('sharpJaw', 0.12); },
+        oval: () => { boost('eyeSoftness', 0.16); boost('longFace', 0.14); boost('smallMouth', 0.1); },
+        long: () => { boost('longFace', 0.48); boost('longMidface', 0.28); lower('roundFace', 0.1); },
+        wide: () => { boost('wideFace', 0.46); boost('broadFeatures', 0.24); boost('roundFace', 0.12); },
+        sharp: () => { boost('sharpJaw', 0.48); boost('cheekDefinition', 0.26); lower('softJaw', 0.1); },
+    };
+    const impressionMap = {
+        warm: () => { boost('eyeSoftness', 0.24); boost('smileCurve', 0.28); boost('roundFace', 0.12); },
+        clear: () => { boost('bigEyes', 0.24); boost('smallMouth', 0.18); boost('eyeRoundness', 0.18); },
+        chic: () => { boost('eyeSlenderness', 0.24); boost('sharpJaw', 0.16); boost('cheekDefinition', 0.16); },
+        bright: () => { boost('expressiveMouth', 0.32); boost('mouthCornerUp', 0.3); boost('smileCurve', 0.18); },
+        mysterious: () => { boost('eyeTailUp', 0.22); boost('longMidface', 0.18); boost('eyeSlenderness', 0.16); },
+        strong: () => { boost('sharpJaw', 0.26); boost('browIntensity', 0.3); boost('broadFeatures', 0.2); },
+    };
+    eyeMap[profile.eyeShape]?.();
+    faceMap[profile.faceShape]?.();
+    impressionMap[profile.firstImpression]?.();
+    return features;
+}
+
+function createSymbolicReading(winner, saju, profile, daily) {
+    const strong = analyzeElementSpread(saju.elements).strong.key;
+    const seed = saju.daySeed + winner.id.length * 19 + profile.name.length * 7 + profile.currentTopic.length;
+    const candidates = symbolicMessages.filter((item) => item.elements.includes(strong));
+    const list = candidates.length ? candidates : symbolicMessages;
+    const picked = list[Math.abs(seed) % list.length];
+    return {
+        title: picked.title,
+        glyph: picked.glyph,
+        key: picked.key,
+        description: `${picked.text} ${topicSymbolAdvice(profile.currentTopic)} 이는 예언이 아니라 지금의 관심사를 비춰보는 심리적 메시지에 가깝습니다.`,
+        message: daily.meditation,
+    };
+}
+
+function topicSymbolAdvice(topic) {
+    return {
+        love: '연애에서는 표현의 양보다 신호가 오가는 방식을 보는 편이 좋습니다.',
+        relationship: '관계에서는 상대의 말보다 반복되는 태도를 함께 보세요.',
+        money: '돈 문제에서는 기분의 보상 소비와 필요한 선택을 분리해보세요.',
+        career: '진로에서는 지금 잘하는 일과 오래 버틸 수 있는 일을 나눠보는 것이 도움이 됩니다.',
+        self: '자기이해에서는 장점과 피로가 같은 뿌리에서 나올 수 있음을 기억하세요.',
+        today: '오늘의 기운은 큰 결정보다 작은 정리와 회복에 더 잘 맞습니다.',
+    }[topic] || '지금 가장 신경 쓰이는 장면을 한 문장으로 적어보면 방향이 선명해집니다.';
+}
+
+function topicTitle(topic) {
+    return {
+        love: '연애에서의 모습',
+        relationship: '관계에서의 모습',
+        money: '돈과 선택의 감각',
+        career: '진로와 일의 흐름',
+        self: '자기이해의 단서',
+        today: '오늘의 기운',
+    }[topic] || '지금 필요한 리딩';
+}
+
+function topicEssay(topic, readingTone, daily) {
+    return {
+        love: readingTone.loveEssay,
+        relationship: readingTone.relationEssay,
+        money: `${daily.money} 돈의 흐름은 성격의 좋고 나쁨보다 불안할 때 무엇으로 균형을 잡는지와 더 가깝습니다.`,
+        career: `${readingTone.focusEssay} 진로에서는 빨리 정답을 고르기보다 오래 반복해도 무너지지 않는 리듬을 찾는 편이 현실적입니다.`,
+        self: `${readingTone.innerEssay} 자기이해는 나를 하나의 성격으로 고정하는 일이 아니라, 반복되는 반응 패턴을 알아차리는 일에 가깝습니다.`,
+        today: `${daily.flow} ${daily.action}`,
+    }[topic] || readingTone.innerEssay;
+}
+
+function renderCompareSeedResult() {
+    if (!currentResult) {
+        compareResult.innerHTML = '<p class="compare-note">먼저 내 무료 결과를 만든 뒤 친구와 궁합을 볼 수 있습니다.</p>';
+        return;
+    }
+    const partner = animalById[currentResult.winner.compat[0]] || currentResult.top[1] || currentResult.winner;
+    compareResult.innerHTML = `
+        <div class="compare-cards">
+            <div class="compare-person"><div class="emoji">${currentResult.winner.emoji}</div><strong>나: ${currentResult.winner.name}</strong><p>${currentResult.winner.tagline}</p></div>
+            <div class="compare-person"><div class="emoji">${partner.emoji}</div><strong>친구 후보: ${partner.name}</strong><p>${partner.tagline}</p></div>
+        </div>
+        <p class="compare-note">친구의 눈매·얼굴형 선택 기능은 다음 단계에서 결제/공유 플로우와 함께 확장할 수 있습니다. 현재는 내 결과 기준으로 잘 맞는 관계 상징을 먼저 보여줍니다. ${currentResult.winner.compatText}</p>
+    `;
 }
 
 function renderResult({ scores, features, winner, top, partAnimals, saju, daily, weekly, symbol, userProfile }) {
@@ -473,8 +600,26 @@ function buildOracleCards({ winner, top, features, partAnimals, saju, daily, wee
             ]),
         },
         {
+            glyph: '問',
+            title: topicTitle(userProfile.currentTopic),
+            tease: '지금 가장 궁금한 주제에 맞춰 한 단락을 더합니다.',
+            body: renderShortBlocks([
+                ['선택한 주제', topicTitle(userProfile.currentTopic)],
+                ['리딩', topicEssay(userProfile.currentTopic, readingTone, daily)],
+            ]),
+        },
+        {
+            glyph: symbol.glyph || '符',
+            title: '오늘의 샤머니틱 심볼',
+            tease: `${symbol.title}이 오늘의 분위기를 비춥니다.`,
+            body: renderShortBlocks([
+                ['상징', symbol.title],
+                ['메시지', symbol.description],
+            ]),
+        },
+        {
             glyph: '日',
-            title: '오늘의 조언 한 문장',
+            title: '나에게 필요한 한 줄 메시지',
             tease: daily.meditation,
             body: renderShortBlocks([
                 ['오늘의 조언', daily.meditation],
@@ -495,7 +640,7 @@ function buildOracleCards({ winner, top, features, partAnimals, saju, daily, wee
         },
         {
             glyph: '符',
-            title: '저장용 부적 카드',
+            title: '공유용 부적 카드',
             tease: `${userProfile.name}님의 오늘 상징은 ${symbol.title}.`,
             body: `<div id="talisman-card" class="talisman-preview">${renderTalismanCard(symbol, winner, daily, userProfile)}</div>`,
         },
@@ -661,8 +806,8 @@ function buildReadingTone({ winner, top, saju, userProfile, daily }) {
         excessEssay: excessText,
         seasonEssay: season.text,
         elementSpread: elementOrder.map((key) => `${elementLabelsKo[key]} ${saju.elements[key]}`).join(' · '),
-        relationEssay: `${winner.name}상은 관계에서 첫 접근보다 “시간이 지나며 남는 인상”이 중요합니다. ${spread.strong.label}이 강하게 잡혀, 사람을 대할 때도 ${relationByElement(spread.strong.key)} ${focusText}`,
-        loveEssay: `${loveByElement(spread.strong.key)} ${top[1] ? `${top[1].name}의 보조 인상 때문에 가까운 사람 앞에서는 생각보다 다른 얼굴이 나올 수 있습니다.` : ''}`,
+        relationEssay: `${winner.name}상은 관계에서 첫 접근보다 “시간이 지나며 남는 인상”이 중요합니다. ${spread.strong.label}이 강하게 잡혀, 사람을 대할 때도 ${relationByElement(spread.strong.key)} ${generateResearchBasedSentence(spread.strong.key, winner, userProfile.currentTopic)} ${focusText}`,
+        loveEssay: `${loveByElement(spread.strong.key)} ${generateResearchBasedSentence(spread.strong.key, winner, 'love')} ${top[1] ? `${top[1].name}의 보조 인상 때문에 가까운 사람 앞에서는 생각보다 다른 얼굴이 나올 수 있습니다.` : ''}`,
         focusEssay: `${daily.focus} ${spread.weak.label}이 약하게 잡힐 때는 집중이 안 되는 이유를 의지 부족으로만 보면 안 됩니다. 환경, 시간, 감정의 노이즈를 먼저 줄이는 편이 더 현실적입니다.`,
         moodKeywords,
         imageDirection: userProfile.moodReference
@@ -783,6 +928,10 @@ function getUserProfile() {
         toneReference: toneReferenceInput.value.trim(),
         avoidExpression: avoidExpressionInput.value.trim(),
         focusElements: focusElementsInput.value.trim(),
+        eyeShape: eyeShapeInput?.value || 'soft',
+        faceShape: faceShapeInput?.value || 'round',
+        firstImpression: firstImpressionInput?.value || 'warm',
+        currentTopic: currentTopicInput?.value || 'love',
     };
 }
 
@@ -1122,7 +1271,7 @@ function resetTester() {
     hideLoading();
     hideResult();
     analyzeButton.disabled = false;
-    showStatus('얼굴 이미지는 저장되지 않으며, 브라우저 안에서만 상을 읽습니다.', false);
+    showStatus('입력값은 결과 생성 목적으로만 사용됩니다. 새 리포트를 다시 열어보세요.', false);
     document.getElementById('start-test').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
